@@ -119,7 +119,11 @@
 
 
 static unsigned uart_ready = 0;
+#if PLATFORM_MSM7X30
+static unsigned uart_base = MSM_UART1_BASE;
+#else
 static unsigned uart_base = MSM_UART3_BASE;
+#endif
 
 #define uwr(v,a) writel(v, uart_base + (a))
 #define urd(a) readl(uart_base + (a))
@@ -132,7 +136,7 @@ void uart_init(void)
 	uwr(0x10, UART_CR);  /* reset receiver */
 	uwr(0x20, UART_CR);  /* reset transmitter */
 	
-#if PLATFORM_QSD8K
+#if PLATFORM_QSD8K || PLATFORM_MSM7X30
 	/* TCXO */
 	uwr(0x06, UART_MREG);
 	uwr(0xF1, UART_NREG);
