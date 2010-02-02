@@ -250,6 +250,27 @@ void lcdc_clock_init(unsigned rate)
 	clock_enable(MDP_CLK);
 }
 
+static uint32_t uart1_gpio_table[] = {
+#ifdef PLATFORM_MSM7X30
+	PCOM_GPIO_CFG(136, 2, GPIO_INPUT, GPIO_PULL_UP, GPIO_4MA),
+	PCOM_GPIO_CFG(137, 2, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_4MA),
+	PCOM_GPIO_CFG(134, 2, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_4MA),
+	PCOM_GPIO_CFG(135, 2, GPIO_INPUT, GPIO_PULL_UP, GPIO_4MA),
+#endif
+};
+#define ARRAY_SIZE(a) (sizeof(a)/(sizeof((a)[0])))
+
+void uart1_mux_init(void)
+{
+	config_gpio_table(uart1_gpio_table, ARRAY_SIZE(uart1_gpio_table));
+}
+
+void uart1_clock_init(void)
+{
+	clock_enable(UART1_CLK);
+	clock_set_rate(UART1_CLK, 19200000 / 4);
+}
+
 void uart3_clock_init(void)
 {
 	clock_enable(UART3_CLK);
