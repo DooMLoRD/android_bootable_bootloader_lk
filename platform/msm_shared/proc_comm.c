@@ -114,8 +114,10 @@ enum {
 	PCOM_VREG_SET_LEVEL,
 	PCOM_GPIO_TLMM_CONFIG_GROUP,
 	PCOM_GPIO_TLMM_UNCONFIG_GROUP,
-	PCOM_NV_READ_HIGH_BITS,
-	PCOM_NV_WRITE_HIGH_BITS,
+	PCOM_NV_WRITE_BYTES_4_7,
+	PCOM_CONFIG_DISP,
+	PCOM_GET_FTM_BOOT_COUNT,
+	PCOM_RPC_GPIO_TLMM_CONFIG_EX,
 	PCOM_NUM_CMDS,
 };
 
@@ -126,6 +128,30 @@ enum {
 	 PCOM_CMD_SUCCESS,
 	 PCOM_CMD_FAIL,
 };
+
+#define GPIO_INPUT	0
+#define GPIO_OUTPUT	1
+
+#define GPIO_NO_PULL	0
+#define GPIO_PULL_DOWN	1
+#define GPIO_KEEPER	2
+#define GPIO_PULL_UP	3
+
+#define GPIO_2MA	0
+#define GPIO_4MA	1
+#define GPIO_6MA	2
+#define GPIO_8MA	3
+#define GPIO_10MA	4
+#define GPIO_12MA	5
+#define GPIO_14MA	6
+#define GPIO_16MA	7
+
+#define PCOM_GPIO_CFG(gpio, func, dir, pull, drvstr) \
+		((((gpio) & 0x3FF) << 4)	| \
+		((func) & 0xf)			| \
+		(((dir) & 0x1) << 14)		| \
+		(((pull) & 0x3) << 15)		| \
+		(((drvstr) & 0xF) << 17))
 
 #ifndef PLATFORM_MSM7X30
 #define MSM_A2M_INT(n) (MSM_CSR_BASE + 0x400 + (n) * 4)
@@ -199,6 +225,16 @@ static int clock_disable(unsigned id)
 static int clock_set_rate(unsigned id, unsigned rate)
 {
 	return msm_proc_comm(PCOM_CLKCTL_RPC_SET_RATE, &id, &rate);
+}
+
+static void config_gpio_table(uint32_t *table, int len)
+{
+	int n;
+	unsigned id;
+	for(n = 0; n < len; n++) {
+		id = table[n];
+		msm_proc_comm(PCOM_RPC_GPIO_TLMM_CONFIG_EX, &id, 0);
+	}
 }
 
 void lcdc_clock_init(unsigned rate)
