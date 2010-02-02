@@ -39,15 +39,17 @@
 void platform_init_interrupts(void);
 void platform_init_timer();
 
-void uart3_clock_init(void);
+void uart1_clock_init(void);
+void uart1_mux_init(void);
 void uart_init(void);
 
 struct fbcon_config *lcdc_init(void);
 
 void platform_early_init(void)
 {
-        //uart3_clock_init();
-	//uart_init();
+	uart1_mux_init();
+	uart1_clock_init();
+	uart_init();
 
 	platform_init_interrupts();
 	platform_init_timer();
