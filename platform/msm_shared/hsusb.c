@@ -513,7 +513,7 @@ int udc_init(struct udc_device *dev)
 	dprintf(INFO, "USB init ept @ %p\n", epts);
 	memset(epts, 0, 32 * sizeof(struct ept_queue_head));
 
-	//dprintf(INFO, "USB ID %08x\n", readl(USB_ID));
+	dprintf(INFO, "USB ID %08x\n", readl(USB_ID));
 //    board_usb_init();
 
         /* select ULPI phy */
@@ -538,7 +538,7 @@ int udc_init(struct udc_device *dev)
 	ep0out = _udc_endpoint_alloc(0, 0, 64);
 	ep0in = _udc_endpoint_alloc(0, 1, 64);
 	ep0req = udc_request_alloc();
-	ep0req->buf = malloc(4096);
+	ep0req->buf = memalign(4096, 4096);
 
 	{
 		/* create and register a language table descriptor */
