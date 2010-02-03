@@ -109,7 +109,7 @@ void fastboot_publish(const char *name, const char *value)
 
 static event_t usb_online;
 static event_t txn_done;
-static unsigned char buffer[4096];
+static unsigned char *buffer;
 static struct udc_endpoint *in, *out;
 static struct udc_request *req;
 int txn_status;
@@ -329,6 +329,8 @@ int fastboot_init(void *base, unsigned size)
 {
 	thread_t *thr;
 	dprintf(INFO, "fastboot_init()\n");
+
+	buffer = memalign(4096, 4096);
 
 	download_base = base;
 	download_max = size;
