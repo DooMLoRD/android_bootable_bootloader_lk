@@ -360,7 +360,7 @@ void cmd_flash(const char *arg, void *data, unsigned sz)
 	}
 
 	if (!strcmp(ptn->name, "system") || !strcmp(ptn->name, "userdata"))
-		extra = ((page_size >> 9) * 16);
+		extra = 64;
 	else
 		sz = ROUND_TO_PAGE(sz, page_mask);
 
