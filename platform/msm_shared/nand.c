@@ -2121,14 +2121,13 @@ static void flash_read_id(dmov_s *cmdlist, unsigned *ptrlist)
 		if (flash_info.block_size && flash_info.page_size)
 		{
 			flash_info.num_blocks = supported_flash[index].density;
-			flash_info.num_blocks /= (flash_info.block_size * flash_info.page_size);
+			flash_info.num_blocks /= flash_info.block_size;
 		}
 		else
 		{
 			flash_info.num_blocks = 0;
 		}
 		ASSERT(flash_info.num_blocks);
-		return;
 	}
 
 	// Assume 8 bit nand device for backward compatability
