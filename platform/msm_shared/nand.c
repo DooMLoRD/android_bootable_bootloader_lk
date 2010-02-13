@@ -102,6 +102,9 @@ static int dmov_exec_cmdptr(unsigned id, unsigned *ptr)
 	return 0;
 }
 
+static int _flash_read_page(dmov_s *cmdlist, unsigned *ptrlist, unsigned page,
+		void *_addr, void *_spareaddr);
+
 static struct flash_info flash_info;
 static unsigned flash_pagesize = 0;
 
@@ -476,7 +479,7 @@ static int _flash_nand_read_page(dmov_s *cmdlist, unsigned *ptrlist,
 
 	/* read extra data */
 	cmd->cmd = 0;
-	cmd->src = NAND_FLASH_BUFFER + 500;
+	cmd->src = NAND_FLASH_BUFFER + 512 - (((flash_pagesize >> 9) - 1) * 4);
 	cmd->dst = spareaddr;
 	cmd->len = 16;
 	cmd++;
@@ -651,11 +654,11 @@ static int _flash_nand_write_page(dmov_s *cmdlist, unsigned *ptrlist, unsigned p
 
 #if VERIFY_WRITE
 	n = _flash_read_page(cmdlist, ptrlist, page, flash_data,
-				 flash_data + 2048);
+				 flash_data + flash_pagesize);
 	if (n != 0)
 		return -1;
-	if (memcmp(flash_data, _addr, 2048) ||
-		memcmp(flash_data + 2048, _spareaddr, 16)) {
+	if (memcmp(flash_data, _addr, flash_pagesize) ||
+		memcmp(flash_data + flash_pagesize, _spareaddr, 16)) {
 		dprintf(CRITICAL, "verify error @ page %d\n", page);
 		return -1;
 	}
