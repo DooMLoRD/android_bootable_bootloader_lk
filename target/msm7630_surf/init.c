@@ -37,7 +37,7 @@
 #include <dev/flash.h>
 #include <smem.h>
 
-#define LINUX_MACHTYPE_SURF  1007016
+#define LINUX_MACHTYPE_SURF  2679
 #define LINUX_MACHTYPE_FFA   1007017
 #define LINUX_MACHTYPE_FLUID 1007018
 
