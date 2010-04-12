@@ -40,6 +40,7 @@
 #include <dev/gpio_keypad.h>
 #include <kernel/event.h>
 #include <kernel/timer.h>
+#include <platform/iomap.h>
 #include <reg.h>
 
 struct gpio_kp {
@@ -455,7 +456,7 @@ void ssbi_gpio_init(void)
 
 void ssbi_keypad_init(struct qwerty_keypad_info  *qwerty_kp)
 {
-    int *modem_stat_check = (SMEM_BASE + 0x14);
+    int *modem_stat_check = (MSM_SHARED_BASE + 0x14);
     int len;
 
     /* Wait for modem to be ready before keypad init */
