@@ -7,6 +7,10 @@
 
 #include <sys/stat.h>
 
+#ifndef MEMBASE
+#define MEMBASE 0
+#endif
+
 int main(int argc, char *argv[])
 {
 	struct stat s;
@@ -43,7 +47,7 @@ int main(int argc, char *argv[])
 	}
 
 	size = s.st_size;
-	base = 0;
+	base = MEMBASE;
 
 	magic[0] = 0x00000005; /* appsbl */
 	magic[1] = 0x00000002; /* nand */
