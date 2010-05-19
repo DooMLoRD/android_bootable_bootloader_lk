@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2008, Google Inc.
+ * Copyright (c) 2009, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,22 +30,48 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _PLATFORM_MSM7K_IOMAP_H_
-#define _PLATFORM_MSM7K_IOMAP_H_
+#include <debug.h>
+#include <dev/keys.h>
+#include <dev/gpio_keypad.h>
+#include <lib/ptable.h>
+#include <dev/flash.h>
+#include <smem.h>
 
-#define MSM_UART1_BASE	0xA9A00000
-#define MSM_UART2_BASE	0xA9B00000
-#define MSM_UART3_BASE	0xA9C00000
+#define LINUX_MACHTYPE_SURF  0xf656a
 
-#define MSM_VIC_BASE	0xC0080000
-#define MSM_TMR_BASE 	0xC0100000
-#define MSM_GPT_BASE    (MSM_TMR_BASE + 0x04)
-#define MSM_CSR_BASE    0xC0100000
-#define MSM_GCC_BASE 	0xC0182000
 
-#define MSM_SDC2_BASE   0xA0500000
-#define MMC_BOOT_MCI_BASE   MSM_SDC2_BASE
+void keypad_init(void);
 
-#define MSM_SHARED_BASE      0x00100000
+static int emmc_boot = -1;  /* set to uninitialized */
+int target_is_emmc_boot(void);
 
-#endif
+void target_init(void)
+{
+
+    dprintf(INFO, "target_init()\n");
+
+    if(mmc_boot_main())
+    {
+        dprintf(CRITICAL, "mmc init failed!");
+        ASSERT(0);
+    }
+}
+
+unsigned board_machtype(void)
+{
+    return LINUX_MACHTYPE_SURF;
+}
+
+void reboot_device(unsigned reboot_reason)
+{
+    return;
+}
+
+unsigned check_reboot_mode(void)
+{
+    return 0;
+}
+
+void target_battery_charging_enable(unsigned enable, unsigned disconnect)
+{
+}

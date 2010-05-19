@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,22 +30,41 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _PLATFORM_MSM7K_IOMAP_H_
-#define _PLATFORM_MSM7K_IOMAP_H_
+#include <debug.h>
+#include <reg.h>
 
-#define MSM_UART1_BASE	0xA9A00000
-#define MSM_UART2_BASE	0xA9B00000
-#define MSM_UART3_BASE	0xA9C00000
+#include <dev/fbcon.h>
+#include <kernel/thread.h>
+#include <platform/debug.h>
+#include <platform/iomap.h>
 
-#define MSM_VIC_BASE	0xC0080000
-#define MSM_TMR_BASE 	0xC0100000
-#define MSM_GPT_BASE    (MSM_TMR_BASE + 0x04)
-#define MSM_CSR_BASE    0xC0100000
-#define MSM_GCC_BASE 	0xC0182000
+void platform_init_interrupts(void);
+void platform_init_timer();
 
-#define MSM_SDC2_BASE   0xA0500000
-#define MMC_BOOT_MCI_BASE   MSM_SDC2_BASE
+void uart3_clock_init(void);
+void uart_init(void);
 
-#define MSM_SHARED_BASE      0x00100000
+struct fbcon_config *lcdc_init(void);
 
-#endif
+void platform_early_init(void)
+{
+    platform_init_interrupts();
+    platform_init_timer();
+}
+
+void platform_init(void)
+{
+    dprintf(INFO, "platform_init()\n");
+}
+
+void display_init(void)
+{
+}
+
+void secondary_core(unsigned sec_entry)
+{
+    writel(sec_entry, 0x2A040020);
+    writel(0x0, 0x009035A0); //VDD_SC1_ARRAY_CLAMP_GFS_CTL
+    writel(0x0, 0x00902D80); //SCSS_CPU1CORE_RESET
+    writel(0x3, 0x00902E64); //SCSS_DBG_STATUS_CORE_PWRDUP
+}

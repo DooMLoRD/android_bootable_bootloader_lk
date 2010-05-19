@@ -1,7 +1,7 @@
-/*
- * Copyright (c) 2008, Google Inc.
+/* Copyright (c) 2008, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ *
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,22 +30,29 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _PLATFORM_MSM7K_IOMAP_H_
-#define _PLATFORM_MSM7K_IOMAP_H_
+#ifndef _PLATFORM_MSM8X60_IOMAP_H_
+#define _PLATFORM_MSM8X60_IOMAP_H_
 
-#define MSM_UART1_BASE	0xA9A00000
-#define MSM_UART2_BASE	0xA9B00000
 #define MSM_UART3_BASE	0xA9C00000
 
-#define MSM_VIC_BASE	0xC0080000
-#define MSM_TMR_BASE 	0xC0100000
+#define MSM_VIC_BASE	0x02080000
+#define MSM_TMR_BASE	0x02000000
 #define MSM_GPT_BASE    (MSM_TMR_BASE + 0x04)
-#define MSM_CSR_BASE    0xC0100000
-#define MSM_GCC_BASE 	0xC0182000
+#define MSM_CSR_BASE    0x02081000
+#define MSM_GCC_BASE	0x02082000
+#define MSM_ACC0_BASE	0x02041000
+#define MSM_ACC1_BASE	0x02051000
 
-#define MSM_SDC2_BASE   0xA0500000
-#define MMC_BOOT_MCI_BASE   MSM_SDC2_BASE
 
-#define MSM_SHARED_BASE      0x00100000
+#define MSM_GIC_CPU_BASE    0x02081000
+#define MSM_GIC_DIST_BASE   0x02080000
 
+#define MSM_SDC1_BASE       0x12400000
+#define MMC_BOOT_MCI_BASE   MSM_SDC1_BASE
+
+#if defined(PLATFORM_MSM8X60)
+#define MSM_SHARED_BASE      0x00000000
+#else
+#define MSM_SHARED_BASE      0x01F00000
+#endif
 #endif
