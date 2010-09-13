@@ -395,8 +395,8 @@ DPRC:
 SYSI2:
         //; setup L2CR1 to some default Instruction and data prefetching values
         //; Users may want specific settings for various performance enhancements
-        MOV r2, #0x33
-        MCR    p15, 3, r2, c15, c0, 3     //; WCP15_L2CR1  r0
+        MOV r2, #0x77
+        MCR p15, 3, r2, c15, c0, 3     //; WCP15_L2CR1  r0
 
 
         //; Enable Z bit to enable branch prediction (default is off)
@@ -523,19 +523,17 @@ SEQ8:
         //;ACTLR[5:4] = 2'h3 - enable parity
         //;ACTLR[19:18] =2'h3 - always generate and check parity(when MMU disabled).
         //;Value to be written #0xC0037
-        // MOVW   r3, #0x0037
-.word 0xe3003037  // hardcoded MOVW instruction due to lack of compiler support
-        // MOVT   r3, #0x000C
-.word 0xe340300c  // hardcoded MOVW instruction due to lack of compiler support
-            //; read the version_id to determine if d-cache should be disabled
-            LDR r2, = 0xa8e00270  //;Read HW_REVISION_NUMBER, HWIO_HW_REVISION_NUMBER_ADDR
-            LDR r2,[r2]
-            AND r2,r2,#0xf0000000 //;hw_revision mask off bits 28-31
-                //;if HW_revision is 1.0 or older, (revision==0)
-                CMP r2,#0
+        MOVW   r3, #0x0037
+        MOVT   r3, #0x000C
+        //; read the version_id to determine if d-cache should be disabled
+        LDR r2, = 0xa8e00270  //;Read HW_REVISION_NUMBER, HWIO_HW_REVISION_NUMBER_ADDR
+        LDR r2,[r2]
+        AND r2,r2,#0xf0000000 //;hw_revision mask off bits 28-31
+        //;if HW_revision is 1.0 or older, (revision==0)
+        CMP r2,#0
         //; Disable d-cache on older QSD8650 (Rev 1.0) silicon
-        //;orreq   r3, r3, #0x4000          //;disable dcache
-        //;MCR   p15, 0, r3, c1, c0, 1      //; WCP15_ACTLR  r3
+        ORREQ r3, r3, #0x4000            //;disable dcache
+        MCR   p15, 0, r3, c1, c0, 1      //; WCP15_ACTLR  r3
 
 //;End of error and control setting
 
