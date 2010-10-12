@@ -22,7 +22,7 @@ ifeq ($(PROJECT),)
 $(error No project specified.  Use "make projectname" or put "PROJECT := projectname" in local.mk)
 endif
 
-DEBUG ?= 2
+DEBUG ?= 0
 
 ifndef $(BOOTLOADER_OUT)
 BOOTLOADER_OUT := .
@@ -106,6 +106,7 @@ ALLOBJS := \
 
 # add some automatic configuration defines
 DEFINES += \
+	BOARD=$(PROJECT) \
 	PROJECT_$(PROJECT)=1 \
 	TARGET_$(TARGET)=1 \
 	PLATFORM_$(PLATFORM)=1 \

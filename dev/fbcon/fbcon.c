@@ -32,6 +32,7 @@
 #include <err.h>
 #include <stdlib.h>
 #include <dev/fbcon.h>
+#include <splash.h>
 
 #include "font5x12.h"
 
@@ -42,7 +43,7 @@ struct pos {
 
 static struct fbcon_config *config = NULL;
 
-#define RGB565_BLUE		0x001f
+#define RGB565_BLACK		0x0000
 #define RGB565_WHITE		0xffff
 
 #define FONT_WIDTH		5
@@ -113,14 +114,8 @@ static void fbcon_scroll_up(void)
 /* TODO: take stride into account */
 void fbcon_clear(void)
 {
-	uint16_t *dst = config->base;
 	unsigned count = config->width * config->height;
-
-	cur_pos.x = 0;
-	cur_pos.y = 0;
-
-	while (count--)
-		*dst++ = BGCOLOR;
+	memset(config->base, BGCOLOR, count * ((config->bpp) / 8));
 }
 
 
@@ -179,8 +174,8 @@ void fbcon_setup(struct fbcon_config *_config)
 
 	switch (config->format) {
 	case FB_FORMAT_RGB565:
-		bg = RGB565_BLUE;
 		fg = RGB565_WHITE;
+		bg = RGB565_BLACK;
 		break;
 
 	default:
@@ -191,16 +186,35 @@ void fbcon_setup(struct fbcon_config *_config)
 
 	fbcon_set_colors(bg, fg);
 
-	fbcon_clear();
-	fbcon_flush();
-
 	cur_pos.x = 0;
 	cur_pos.y = 0;
 	max_pos.x = config->width / (FONT_WIDTH+1);
 	max_pos.y = (config->height - 1) / FONT_HEIGHT;
+#if !DISPLAY_SPLASH_SCREEN
+	fbcon_clear();
+#endif
 }
 
 struct fbcon_config* fbcon_display(void)
 {
     return config;
+}
+
+
+void diplay_image_on_screen(void)
+{
+    unsigned i = 0;
+    unsigned total_x = config->width;
+    unsigned total_y = config->height;
+    unsigned bytes_per_bpp = ((config->bpp) / 8);
+    unsigned image_base = ((((total_y/2) - (SPLASH_IMAGE_WIDTH / 2) - 1) *
+			    (config->width)) + (total_x/2 - (SPLASH_IMAGE_HEIGHT / 2)));
+    fbcon_clear();
+    for (i = 0; i < SPLASH_IMAGE_WIDTH; i++)
+    {
+      memcpy (config->base + ((image_base + (i * (config->width))) * bytes_per_bpp),
+	         imageBuffer + (i * SPLASH_IMAGE_HEIGHT * bytes_per_bpp),
+	         SPLASH_IMAGE_HEIGHT * bytes_per_bpp);
+    }
+    fbcon_flush();
 }

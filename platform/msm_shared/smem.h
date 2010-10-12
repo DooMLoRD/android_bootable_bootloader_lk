@@ -93,6 +93,8 @@ typedef enum {
 
 	SMEM_USABLE_RAM_PARTITION_TABLE = 402,
 
+	SMEM_POWER_ON_STATUS_INFO = 403,
+
 	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
 	SMEM_LAST_VALID_TYPE = SMEM_USABLE_RAM_PARTITION_TABLE,
 } smem_mem_type_t;
@@ -128,6 +130,14 @@ enum {
     SHARED_DOMAIN,
 };
 
+enum {
+	SYS_MEMORY = 1,        /* system memory*/
+	BOOT_REGION_MEMORY1,   /* boot loader memory 1*/
+	BOOT_REGION_MEMORY2,   /* boot loader memory 2,reserved*/
+	APPSBL_MEMORY,         /* apps boot loader memory*/
+	APPS_MEMORY,           /* apps  usage memory*/
+};
+
 struct smem_ram_ptn {
 	char name[16];
 	unsigned start;
@@ -142,8 +152,11 @@ struct smem_ram_ptn {
 	/* RAM Partition domain: APPS, MODEM, APPS & MODEM (SHARED) etc. */
 	unsigned domain;
 
+	/* RAM Partition type: system, bootloader, appsboot, apps etc. */
+	unsigned type;
+
 	/* reserved for future expansion without changing version number */
-	unsigned reserved1, reserved2, reserved3, reserved4, reserved5;
+	unsigned reserved2, reserved3, reserved4, reserved5;
 } __attribute__ ((__packed__));
 
 struct smem_ram_ptable {
@@ -157,6 +170,7 @@ struct smem_ram_ptable {
 	unsigned buf;
 } __attribute__ ((__packed__));
 
-
+/* Power on reason/status info */
+#define PWR_ON_EVENT_USB_CHG 0x20
 
 #endif /* __PLATFORM_MSM_SHARED_SMEM_H */

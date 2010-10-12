@@ -10,7 +10,7 @@ SRC_DIR  := target/$(TARGET)/tools
 COMPILER := gcc
 
 ifeq ($(EMMC_BOOT), 1)
-  APPSBOOTHDR_FILES := emmc_appsboot.mbn emmc_appsboothd.mbn
+  APPSBOOTHDR_FILES := EMMCBOOT.MBN emmc_appsboothd.mbn
 else
   ifeq ($(BUILD_NANDWRITE), 1)
     APPSBOOTHDR_FILES :=
@@ -27,7 +27,8 @@ appsboot.mbn: $(OUTBIN)
 appsboothd.mbn: mkheader $(OUTBIN)
 	$(SRC_DIR)/mkheader $(OUTBIN) $(APPSBOOTHEADER_DIR)/appsboothd.mbn
 
-emmc_appsboot.mbn: $(OUTBIN)
+EMMCBOOT.MBN: $(OUTBIN)
+	cp -f $(OUTBIN) $(APPSBOOTHEADER_DIR)/EMMCBOOT.MBN
 	cp -f $(OUTBIN) $(APPSBOOTHEADER_DIR)/emmc_appsboot.mbn
 
 emmc_appsboothd.mbn: mkheader $(OUTBIN)

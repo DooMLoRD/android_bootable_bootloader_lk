@@ -42,6 +42,7 @@
 
 static void *flash_spare;
 static void *flash_data;
+void platform_config_interleaved_mode_gpios(void);
 
 typedef struct dmov_ch dmov_ch;
 struct dmov_ch
@@ -106,6 +107,7 @@ static int dmov_exec_cmdptr(unsigned id, unsigned *ptr)
 
 static struct flash_info flash_info;
 static unsigned flash_pagesize = 0;
+static int interleaved_mode = 0;
 
 struct flash_identification {
 	unsigned flash_id;
@@ -127,14 +129,15 @@ static struct flash_identification supported_flash[] =
 	{0x1500aa98, 0xFFFFFFFF, (256<<20), 0, 2048, (2048<<6), 64, 0}, /*Tosh*/
 	{0x5500ba98, 0xFFFFFFFF, (256<<20), 1, 2048, (2048<<6), 64, 0}, /*Tosh*/
 	{0xd580b12c, 0xFFFFFFFF, (256<<20), 1, 2048, (2048<<6), 64, 0}, /*Micr*/
-	{0x5590bc2c, 0xFFFFFFFF, (512<<20), 1, 2048, (4096<<6), 64, 0}, /*Micr*/
+	{0x5590bc2c, 0xFFFFFFFF, (512<<20), 1, 2048, (2048<<6), 64, 0}, /*Micr*/
 	{0x1580aa2c, 0xFFFFFFFF, (256<<20), 0, 2048, (2048<<6), 64, 0}, /*Micr*/
+	{0x1590ac2c, 0xFFFFFFFF, (512<<20), 0, 2048, (2048<<6), 64, 0}, /*Micr*/
 	{0x5580baad, 0xFFFFFFFF, (256<<20), 1, 2048, (2048<<6), 64, 0}, /*Hynx*/
 	{0x5510baad, 0xFFFFFFFF, (256<<20), 1, 2048, (2048<<6), 64, 0}, /*Hynx*/
 	{0x004000ec, 0xFFFFFFFF, (256<<20), 0, 2048, (2048<<6), 64, 1}, /*Sams*/
 	{0x005c00ec, 0xFFFFFFFF, (256<<20), 0, 2048, (2048<<6), 64, 1}, /*Sams*/
 	{0x005800ec, 0xFFFFFFFF, (256<<20), 0, 2048, (2048<<6), 64, 1}, /*Sams*/
-	{0x6600bcec, 0xFF00FFFF, (512<<20), 1, 4096, (2048<<6), 128, 0}, /*Sams*/
+	{0x6600bcec, 0xFF00FFFF, (512<<20), 1, 4096, (4096<<6), 128, 0}, /*Sams*/
 	/* Note: Width flag is 0 for 8 bit Flash and 1 for 16 bit flash	  */
 	/* Note: Onenand flag is 0 for NAND Flash and 1 for OneNAND flash	*/
 	/* Note: The First row will be filled at runtime during ONFI probe	*/
@@ -3163,7 +3166,7 @@ static void flash_read_id(dmov_s *cmdlist, unsigned *ptrlist)
 		if (flash_info.block_size && flash_info.page_size)
 		{
 			flash_info.num_blocks = supported_flash[index].density;
-			flash_info.num_blocks /= (flash_info.block_size * flash_info.page_size);
+			flash_info.num_blocks /= (flash_info.block_size);
 		}
 		else
 		{
@@ -3205,6 +3208,9 @@ static int _flash_read_page(dmov_s *cmdlist, unsigned *ptrlist,
 	switch(flash_info.type) {
 		case FLASH_8BIT_NAND_DEVICE:
 		case FLASH_16BIT_NAND_DEVICE:
+		  if(interleaved_mode)
+			return flash_nand_read_page_interleave(cmdlist, ptrlist, page, _addr, _spareaddr);
+		  else
 			return _flash_nand_read_page(cmdlist, ptrlist, page, _addr, _spareaddr);
 		case FLASH_ONENAND_DEVICE:
 			return _flash_onenand_read_page(cmdlist, ptrlist, page, _addr, _spareaddr, 0);
@@ -3233,6 +3239,9 @@ static int _flash_write_page(dmov_s *cmdlist, unsigned *ptrlist,
 	switch(flash_info.type) {
 		case FLASH_8BIT_NAND_DEVICE:
 		case FLASH_16BIT_NAND_DEVICE:
+		  if(interleaved_mode)
+			return flash_nand_write_page_interleave(cmdlist, ptrlist, page, _addr, _spareaddr, 0);
+		  else
 			return _flash_nand_write_page(cmdlist, ptrlist, page, _addr, _spareaddr, 0);
 		case FLASH_ONENAND_DEVICE:
 			return _flash_onenand_write_page(cmdlist, ptrlist, page, _addr, _spareaddr, 0);
@@ -3309,6 +3318,7 @@ int flash_read_ext(struct ptentry *ptn, unsigned extra_per_page,
 	unsigned start_block = ptn->start;
 	int result = 0;
 	int isbad = 0;
+	int start_block_count = 0;
 
 	ASSERT(ptn->type == TYPE_APPS_PARTITION);
 	set_nand_configuration(TYPE_APPS_PARTITION);
@@ -3316,16 +3326,21 @@ int flash_read_ext(struct ptentry *ptn, unsigned extra_per_page,
 	if(offset & (flash_pagesize - 1))
 		return -1;
 
-	// Adjust page offset based on number of bad blocks from start to current page
-	while (start_block < current_block) {
-		isbad = _flash_block_isbad(flash_cmdlist, flash_ptrlist, start_block*64);
-		if (isbad)
-			page += 64;
-
-		start_block++;
+// Adjust page offset based on number of bad blocks from start to current page
+	if (start_block < current_block)
+	{
+		start_block_count = (current_block - start_block);
+		while (start_block_count && (start_block < (ptn->start + ptn->length))) {
+			isbad = _flash_block_isbad(flash_cmdlist, flash_ptrlist, start_block*64);
+			if (isbad)
+				page += 64;
+			else
+				start_block_count--;
+			start_block++;
+		}
 	}
 
-	while(page < lastpage) {
+	while((page < lastpage) && !start_block_count) {
 		if(count == 0) {
 			dprintf(INFO, "flash_read_image: success (%d errors)\n", errors);
 			return 0;
@@ -3445,4 +3460,15 @@ static int flash_read_page(unsigned page, void *data, void *extra)
 unsigned flash_page_size(void)
 {
 	return flash_pagesize;
+}
+
+void enable_interleave_mode(int status)
+{
+  interleaved_mode = status;
+  if(status)
+  {
+        flash_pagesize *= 2;
+	platform_config_interleaved_mode_gpios();
+  }
+  return;
 }

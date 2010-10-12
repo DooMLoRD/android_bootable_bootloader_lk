@@ -36,6 +36,7 @@
 #include <lib/ptable.h>
 #include <dev/flash.h>
 #include <smem.h>
+#include <platform/iomap.h>
 
 #define LINUX_MACHTYPE  1007014
 
@@ -56,37 +57,37 @@ static struct ptable flash_ptable;
 static struct ptentry board_part_list[] = {
 	{
 		.start = 0,
-		.length = 40  /* 5MB */,
+		.length = 5 /* In MB */,
 		.name = "boot",
 	},
 	{
-		.start = 40,
-		.length =760  /* 95MB */,
+		.start = DIFF_START_ADDR,
+		.length = 105 /* In MB */,
 		.name = "system",
 	},
 	{
-                .start = 800,
-                .length = 8,
-                .name = "splash",
-	},
-	{
-		.start = 808,
-		.length = 40  /* 5MB */,
+		.start = DIFF_START_ADDR,
+		.length = 1 /* In MB */,
 		.name = "cache",
 	},
 	{
-		.start = 848,
+		.start = DIFF_START_ADDR,
+		.length = 1 /* In MB */,
+		.name = "misc",
+	},
+	{
+		.start = DIFF_START_ADDR,
 		.length = VARIABLE_LENGTH,
 		.name = "userdata",
 	},
 	{
 		.start = DIFF_START_ADDR,
-		.length = 12 /* 1.5MB */,
+		.length = 2 /* In MB */,
 		.name = "persist",
 	},
 	{
 		.start = DIFF_START_ADDR,
-		.length = 40 /* 5MB */,
+		.length = 5 /* In MB */,
 		.name = "recovery",
 	},
 };
@@ -104,8 +105,8 @@ void target_init(void)
 	unsigned offset;
 	struct flash_info *flash_info;
 	unsigned total_num_of_blocks;
-	bool  start_addr_changed = false;
 	unsigned next_ptr_start_adr = 0;
+	unsigned blocks_per_1MB = 8; /* Default value of 2k page size on 256MB flash drive*/
 	int i;
 
 	dprintf(INFO, "target_init()\n");
@@ -116,7 +117,14 @@ void target_init(void)
 #endif
 
 	if (target_is_emmc_boot())
+	{
+		if(mmc_boot_main(MMC_SLOT, MSM_SDC1_BASE))
+		{
+			dprintf(CRITICAL, "mmc init failed!");
+			ASSERT(0);
+		}
 		return;
+	}
 
 	ptable_init(&flash_ptable);
 	smem_ptable_init();
@@ -129,33 +137,32 @@ void target_init(void)
 	if (offset == 0xffffffff)
 	        while(1);
 
-	total_num_of_blocks = (flash_info->block_size)/NUM_PAGES_PER_BLOCK;
+	total_num_of_blocks = flash_info->num_blocks;
+	blocks_per_1MB = (1 << 20) / (flash_info->block_size);
 
 	for (i = 0; i < num_parts; i++) {
 		struct ptentry *ptn = &board_part_list[i];
-		unsigned len = ptn->length;
+		unsigned len = ((ptn->length) * blocks_per_1MB);
 
-		if(len == VARIABLE_LENGTH)
+		if(ptn->start != 0)
+		        ASSERT(ptn->start == DIFF_START_ADDR);
+
+		ptn->start = next_ptr_start_adr;
+
+		if(ptn->length == VARIABLE_LENGTH)
 		{
-		        start_addr_changed = true;
 			unsigned length_for_prt = 0;
 			unsigned j;
 			for (j = i+1; j < num_parts; j++)
 			{
 			        struct ptentry *temp_ptn = &board_part_list[j];
 			        ASSERT(temp_ptn->length != VARIABLE_LENGTH);
-			        length_for_prt += temp_ptn->length;
+			        length_for_prt += ((temp_ptn->length) * blocks_per_1MB);
 			}
 		        len = (total_num_of_blocks - 1) - (offset + ptn->start + length_for_prt);
 			ASSERT(len >= 0);
-		        next_ptr_start_adr = ptn->start + len;
 		}
-		if((ptn->start == DIFF_START_ADDR) && (start_addr_changed))
-		{
-		        ASSERT(next_ptr_start_adr);
-			ptn->start = next_ptr_start_adr;
-			next_ptr_start_adr = ptn->start + ptn->length;
-		}
+		next_ptr_start_adr = ptn->start + len;
 		ptable_add(&flash_ptable, ptn->name, offset + ptn->start,
 			   len, ptn->flags, TYPE_APPS_PARTITION, PERM_WRITEABLE);
 	}
@@ -190,6 +197,29 @@ unsigned check_reboot_mode(void)
       return 0;
     }
     return mode[0];
+}
+
+static unsigned target_check_power_on_reason(void)
+{
+    unsigned power_on_status = 0;
+    unsigned int status_len = sizeof(power_on_status);
+    unsigned smem_status;
+
+    smem_status = smem_read_alloc_entry(SMEM_POWER_ON_STATUS_INFO,
+                                        &power_on_status, status_len);
+    if (!smem_status)
+    {
+        dprintf(CRITICAL, "ERROR: unable to read shared memory for power on reason\n");
+    }
+
+    return power_on_status;
+}
+
+unsigned target_pause_for_battery_charge(void)
+{
+    if (target_check_power_on_reason() == PWR_ON_EVENT_USB_CHG)
+        return 1;
+    return 0;
 }
 
 void target_battery_charging_enable(unsigned enable, unsigned disconnect)

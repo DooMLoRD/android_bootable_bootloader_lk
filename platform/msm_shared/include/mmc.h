@@ -29,15 +29,11 @@
 #ifndef __MMC_H__
 #define __MMC_H__
 
-#ifndef MMC_BOOT_MCI_BASE
-#define MMC_BOOT_MCI_BASE   0
-#endif
-
 #ifndef MMC_SLOT
 #define MMC_SLOT            0
 #endif
 
-#define MMC_BOOT_MCI_REG(offset)          (MMC_BOOT_MCI_BASE + offset)
+#define MMC_BOOT_MCI_REG(offset)          ((mmc_boot_mci_base) + offset)
 
 /*
  * Define Macros for SDCC Registers
@@ -508,9 +504,18 @@ struct mmc_boot_host
 #define BINARY_IN_TABLE_SIZE      (16 * 512)
 #define MAX_FILE_ENTRIES          20
 
-#define MMC_BOOT_TYPE 0x48
-#define MMC_SYSTEM_TYPE 0x82
-#define MMC_USERDATA_TYPE 0x83
+#define MMC_MODEM_TYPE	 		0x06
+#define MMC_MODEM_TYPE2			0x0C
+#define MMC_SBL1_TYPE 			0x4D
+#define MMC_SBL2_TYPE 			0x51
+#define MMC_SBL3_TYPE 			0x45
+#define MMC_RPM_TYPE 			0x47
+#define MMC_TZ_TYPE 			0x46
+
+#define MMC_ABOOT_TYPE 			0x4C
+#define MMC_BOOT_TYPE 			0x48
+#define MMC_SYSTEM_TYPE 		0x82
+#define MMC_USERDATA_TYPE 		0x83
 
 #define MMC_RCA 2
 
@@ -540,8 +545,10 @@ struct mbr_entry
 #define MMC_BOOT_RD_BLOCK_LEN         512
 #define MMC_BOOT_WR_BLOCK_LEN         512
 
-/* We have 12 32-bits FIFO registers */
-#define MMC_BOOT_MCI_FIFO_SIZE        ( 12 * 4 )
+/* We have 16 32-bits FIFO registers */
+#define MMC_BOOT_MCI_FIFO_COUNT       16
+#define MMC_BOOT_MCI_HFIFO_COUNT      ( MMC_BOOT_MCI_FIFO_COUNT / 2 )
+#define MMC_BOOT_MCI_FIFO_SIZE        ( MMC_BOOT_MCI_FIFO_COUNT * 4 )
 
 /*Need to put at proper place*/
 #define SDC1_CLK    19  /* Secure Digital Card clocks */
@@ -561,6 +568,7 @@ struct mbr_entry
 #define MMC_CLK_144KHZ                144000
 #define MMC_CLK_20MHZ                 20000000
 #define MMC_CLK_25MHZ                 25000000
+#define MMC_CLK_48MHZ                 48000000
 #define MMC_CLK_50MHZ                 49152000
 
 #define MMC_CLK_ENABLE      1

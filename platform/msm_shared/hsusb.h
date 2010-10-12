@@ -31,11 +31,7 @@
 #ifndef _MSM7200_USB_H_
 #define _MSM7200_USB_H_
 
-#ifdef PLATFORM_MSM7X30
-#define MSM_USB_BASE 0xA3600000
-#elif  PLATFORM_MSM8X60
-#define MSM_USB_BASE 0x12500000
-#else
+#ifndef MSM_USB_BASE
 #define MSM_USB_BASE 0xA0800000
 #endif
 
@@ -172,9 +168,6 @@ struct ept_queue_item
 #define ULPI_ADDR(n)          (((n) & 255) << 16)
 #define ULPI_DATA(n)          ((n) & 255)
 #define ULPI_DATA_READ(n)     (((n) >> 8) & 255)
-#ifdef PLATFORM_MSM7X30
-#define USBH_NS_REG           (0xAB8002C0)
-#endif
 
 /* for USB charging */
 #define TRUE              1

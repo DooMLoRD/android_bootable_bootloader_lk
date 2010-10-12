@@ -5,10 +5,10 @@ ARM_CPU := cortex-a8
 #arm1136j-s
 CPU := generic
 
-MC_SLOT        := 2
+MMC_SLOT        := 2
 
 DEFINES += WITH_CPU_EARLY_INIT=1 WITH_CPU_WARM_BOOT=1 \
-	   MMC_SLOT=$(MMC_SLOT)
+	   MMC_SLOT=$(MMC_SLOT) MDP4=1
 
 INCLUDES += -I$(LOCAL_DIR)/include
 

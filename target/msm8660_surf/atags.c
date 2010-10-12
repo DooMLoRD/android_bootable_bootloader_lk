@@ -30,27 +30,54 @@
 #include <debug.h>
 #include <smem.h>
 
-#define EBI1_SIZE_60M   0x03C00000
-#define EBI1_SIZE_128M  0x08000000
-#define EBI1_SIZE_60M  (254 * 1024 * 1024)
-#define EBI1_ADDR_60M   0x40200000
-#define EBI1_ADDR_128M  0x48000000
+#define SIZE_45M              0x02D00000 // 45M
+#define EBI1_ADDR_1026M       0x40200000
+
+#define SIZE_128M             0x08000000 // 128M
+#define EBI1_ADDR_1152M       0x48000000
+
+#define SIZE_256M             0x10000000 // 256M
+#define EBI1_ADDR_1280M       0x50000000
+
+#define SIZE_768M             0x30000000 // 256M + 512M
+
+#define EBI1_CS1_ADDR_BASE    0x00A40024
 
 unsigned* target_atag_mem(unsigned* ptr)
 {
-    /* ATAG_MEM for 51MB + 128MB setup */
-    *ptr++ = 4;
-    *ptr++ = 0x54410002;
-    *ptr++ = EBI1_SIZE_60M;
-    *ptr++ = EBI1_ADDR_60M;
+    unsigned value = 0;
 
     /* ATAG_MEM */
-    /*
     *ptr++ = 4;
     *ptr++ = 0x54410002;
-    *ptr++ = EBI1_SIZE_128M;
-    *ptr++ = EBI1_ADDR_128M;
-    */
+    *ptr++ = SIZE_45M;
+    *ptr++ = EBI1_ADDR_1026M;
+
+    *ptr++ = 4;
+    *ptr++ = 0x54410002;
+    *ptr++ = SIZE_128M;
+    *ptr++ = EBI1_ADDR_1152M;
+
+    value = readl(EBI1_CS1_ADDR_BASE);
+    value = (value >> 8) & 0xFF;
+
+    if (value == 0x50)
+    {
+        /* For 512MB RAM*/
+        *ptr++ = 4;
+        *ptr++ = 0x54410002;
+        *ptr++ = SIZE_256M;
+        *ptr++ = EBI1_ADDR_1280M;
+    }
+    else if (value == 0x60)
+    {
+        /* For 1GB RAM*/
+        *ptr++ = 4;
+        *ptr++ = 0x54410002;
+        *ptr++ = SIZE_768M;
+        *ptr++ = EBI1_ADDR_1280M;
+    }
+
     return ptr;
 }
 

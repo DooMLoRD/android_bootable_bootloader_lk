@@ -113,7 +113,10 @@ unsigned udc_string_desc_alloc(const char *str)
 
 /* end of common code */
 
-void hsusb_clock_init(void);
+__WEAK void hsusb_clock_init(void)
+{
+	return 0;
+}
 
 #if 1
 #define DBG(x...) do {} while(0)
@@ -518,76 +521,6 @@ static int msm_otg_xceiv_reset()
 	writel(0x81000000, USB_PORTSC);
 	return 0;
 }
-#define USB_HS1_XVCR_FS_CLK_MD 0x00902908
-#define USB_HS1_XVCR_FS_CLK_NS 0x0090290C
-void hsusb_8x60_clock_init(void)
-{
-    unsigned int val = 0;
-
-    //Enable PLL8
-	writel(0xF, 0x00903144);
-	writel(0x5, 0x00903148);
-	writel(0x8, 0x0090314C);
-
-	val = readl(0x00903154);
-	val &= ~(0xC30000);
-	val |= 0xC10000;
-	writel(val, 0x00903154);
-
-	val = readl(0x00903140);
-	val &= ~(0x7);
-	val |= 0x7;
-	writel(val, 0x00903140);
-
-
-    //Set 7th bit in NS Register
-	val = 1 << 7;
-	writel(val, USB_HS1_XVCR_FS_CLK_NS);
-
-	//Set rate specific value in MD
-	writel(0x000500DF, USB_HS1_XVCR_FS_CLK_MD);
-
-	//Set value in NS register
-	val = 1 << 7;
-	val |= 0x00E400C3;
-	writel(val, USB_HS1_XVCR_FS_CLK_NS);
-
-	// Clear 7th bit
-	val = 1 << 7;
-	val = ~val;
-	val = val & readl(USB_HS1_XVCR_FS_CLK_NS);
-	writel(val, USB_HS1_XVCR_FS_CLK_NS);
-
-	//set 11th bit
-	val = 1 << 11;
-	val |= readl(USB_HS1_XVCR_FS_CLK_NS);
-	writel(val, USB_HS1_XVCR_FS_CLK_NS);
-
-	//set 9th bit
-	val = 1 << 9;
-	val |= readl(USB_HS1_XVCR_FS_CLK_NS);
-	writel(val, USB_HS1_XVCR_FS_CLK_NS);
-
-	//set 8th bit
-	val = 1 << 8;
-	val |= readl(USB_HS1_XVCR_FS_CLK_NS);
-	writel(val, USB_HS1_XVCR_FS_CLK_NS);
-}
-
-void hsusb_clock_init(void)
-{
-    // Enable usb clocks from apps processor for 7x30.
-    // USB clocks already initialized for other targets
-    // so skipping proc comm call to enable usb clocks.
-#ifdef PLATFORM_MSM7X30
-    writel(0x00000100, USBH_NS_REG);
-    writel(0x00000900, USBH_NS_REG);
-    writel(0x00000A00, USBH_NS_REG);
-    writel(0x00002A00, USBH_NS_REG);
-#elif PLATFORM_MSM8X60
-    hsusb_8x60_clock_init();
-#endif
-}
 
 void board_usb_init(void);
 void board_ulpi_init(void);
@@ -790,7 +723,7 @@ int udc_start(void)
 	unsigned char *data;
 	unsigned size;
 
-	dprintf(INFO, "udc_start()\n");
+	dprintf(ALWAYS, "udc_start()\n");
 
 	if (!the_device) {
 		dprintf(CRITICAL, "udc cannot start before init\n");
@@ -844,11 +777,18 @@ int udc_start(void)
 
 int udc_stop(void)
 {
-	writel(0, USB_USBINTR);
+	int val;
+    writel(0, USB_USBINTR);
 	mask_interrupt(INT_USB_HS);
 
         /* disable pullup */
-	writel(0x0008000, USB_USBCMD);
+	writel(0x00080000, USB_USBCMD);
+#ifdef PLATFORM_MSM8X60
+	/* Voting down PLL8 */
+	val = readl(0x009034C0);
+	val &= ~(1<<8);
+	writel(val, 0x009034C0);
+#endif
 	thread_sleep(10);
 
 	return 0;
@@ -913,6 +853,28 @@ int is_usb_cable_connected(void)
     } else {
         return 0;
     }
+}
+
+/* check for USB connection assuming USB is not pulled up.
+ * It looks for suspend state bit in PORTSC register.
+ *
+ * RETURN: If cable connected return 1
+ * If cable disconnected return 0
+ */
+
+int usb_cable_status(void)
+{
+    unsigned ret = 0;
+    /*Verify B Session Valid Bit to verify vbus status*/
+    writel(0x00080001, USB_USBCMD);
+    thread_sleep(100);
+
+    /*Check reset value of suspend state bit*/
+    if (!((1<<7) & readl(USB_PORTSC))) {
+        ret=1;
+    }
+    udc_stop();
+    return ret;
 }
 
 void usb_charger_change_state(void)
