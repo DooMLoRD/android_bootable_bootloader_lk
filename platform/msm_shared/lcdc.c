@@ -76,6 +76,7 @@ static struct fbcon_config fb_cfg = {
 };
 
 void lcdc_clock_init(unsigned rate);
+void mdelay(unsigned msecs);
 
 struct fbcon_config *lcdc_init(void)
 {
@@ -147,3 +148,8 @@ struct fbcon_config *lcdc_init(void)
 	return &fb_cfg;
 }
 
+void lcdc_shutdown(void)
+{
+    writel(0, MSM_MDP_BASE1 + LCDC_BASE + 0x0);
+    mdelay(30);
+}

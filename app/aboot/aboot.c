@@ -199,7 +199,9 @@ void boot_linux(void *kernel, unsigned *tags,
 	platform_uninit_timer();
 	arch_disable_cache(UCACHE);
 	arch_disable_mmu();
-
+#if DISPLAY_SPLASH_SCREEN
+	display_shutdown();
+#endif
 	secondary_core((unsigned)kernel);
 	entry(0, machtype, tags);
 

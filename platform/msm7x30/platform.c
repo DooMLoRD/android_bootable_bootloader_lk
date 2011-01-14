@@ -130,3 +130,11 @@ void display_init(void)
     fbcon_setup(fb_cfg);
 #endif
 }
+
+void display_shutdown(void)
+{
+#if DISPLAY_TYPE_LCDC
+    /* Turning off LCDC */
+    lcdc_shutdown();
+#endif
+}
