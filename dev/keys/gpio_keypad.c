@@ -534,7 +534,7 @@ scan_qwerty_keypad(struct timer *timer, time_t now, void *arg)
     unsigned char column_new_keys = 0x00;
     unsigned char column_old_keys = 0x00;
     int shift = 0;
-    static int key_detected = 0;
+    static int key_detected = -1;
 
     if ((*rd_function)((qwerty_keypad->keypad_info)->rec_keys, num_of_ssbi_reads,
                                                  SSBI_REG_KYPD_REC_DATA_ADDR))
