@@ -40,13 +40,7 @@
 #include <platform/gpio_hw.h>
 #include <baseband.h>
 #include <reg.h>
-
-#define LINUX_MACHTYPE_8660_SURF    2755
-#define LINUX_MACHTYPE_8660_FFA     3017
-#define LINUX_MACHTYPE_8660_FLUID   3124
-#define LINUX_MACHTYPE_8660_QT      3298
-#define LINUX_MACHTYPE_8660_CHARM_SURF   3181
-#define LINUX_MACHTYPE_8660_CHARM_FFA    3199
+#include <platform/machtype.h>
 
 void keypad_init(void);
 

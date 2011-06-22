@@ -80,6 +80,11 @@
 #define PIXEL_MD_VAL            0x00A9FDA6
 #define PIXEL_CC_VAL            0x00000080
 
+/* Configured at 25 Mhz for Fluid Auo Panel */
+#define FLUID_AUO_PIXEL_NS_VAL  0xFFF10002
+#define FLUID_AUO_PIXEL_MD_VAL  0x0001FFF0
+#define FLUID_AUO_PIXEL_CC_VAL  0x00000080
+
 #define MSM_CLK_CTL_BASE        0x00900000
 #define BB_PLL8_L_VAL_REG       (MSM_CLK_CTL_BASE + 0x3144)
 #define BB_PLL8_M_VAL_REG       (MSM_CLK_CTL_BASE + 0x3148)

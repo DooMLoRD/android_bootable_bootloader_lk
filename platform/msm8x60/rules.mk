@@ -26,6 +26,7 @@ OBJS += \
 	$(LOCAL_DIR)/mmc_init.o \
 	$(LOCAL_DIR)/gpio.o \
 	$(LOCAL_DIR)/panel.o \
+	$(LOCAL_DIR)/panel_auo_wvga.o \
 	$(LOCAL_DIR)/pmic.o \
 	$(LOCAL_DIR)/pmic_pwm.o \
 	$(LOCAL_DIR)/scm-io.o

@@ -39,6 +39,8 @@
 #include <platform/iomap.h>
 #include <i2c_qup.h>
 
+#include <dev/lcdc.h>
+
 #define CONVERT_ENDIAN_U32(val)                   \
     ((((uint32_t)(val) & 0x000000FF) << 24) |     \
      (((uint32_t)(val) & 0x0000FF00) << 8)  |     \
@@ -86,10 +88,13 @@ void display_init(void)
 {
     struct fbcon_config *fb_cfg;
 #if DISPLAY_TYPE_LCDC
+    struct lcdc_timing_parameters *lcd_timing;
     mdp_clock_init();
-    fb_cfg = lcdc_init();
-    panel_poweron();
+    lcd_timing = get_lcd_timing();
+    fb_cfg = lcdc_init_set( lcd_timing );
     fbcon_setup(fb_cfg);
+    fbcon_clear();
+    panel_poweron();
 #endif
 #if DISPLAY_TYPE_MIPI
     mdp_clock_init();
