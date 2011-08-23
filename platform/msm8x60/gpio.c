@@ -53,3 +53,9 @@ void gpio_set(uint32_t gpio, uint32_t dir)
     writel(dir, addr);
     return;
 }
+
+void gpio_config_pshold(void)
+{
+	gpio_tlmm_config(92, 1, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_12MA, GPIO_DISABLE);
+}
+
