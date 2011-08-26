@@ -53,6 +53,11 @@ unsigned boot_into_recovery = 0;
 void reboot_device(unsigned);
 extern int target_is_emmc_boot(void);
 
+extern void reset_device_info();
+extern void set_device_root();
+
+extern unsigned long long mmc_ptn_offset (unsigned char * name);
+
 int get_recovery_message(struct recovery_message *out)
 {
 	struct ptentry *ptn;
@@ -442,12 +447,20 @@ int _emmc_recovery_init(void)
 			dprintf(INFO,"radio update failed\n");
 			strcpy(msg.status, "failed-update");
 		}
+		boot_into_recovery = 1;		// Boot in recovery mode
+	}
+	if (!strcmp("reset-device-info",msg.command))
+	{
+		reset_device_info();
+	}
+	if (!strcmp("root-detect",msg.command))
+	{
+		set_device_root();
 	}
 	else
 		return 0;	// do nothing
 
 	strcpy(msg.command, "");	// clearing recovery command
 	emmc_set_recovery_msg(&msg);	// send recovery message
-	boot_into_recovery = 1;		// Boot in recovery mode
 	return 0;
 }

@@ -421,3 +421,11 @@ void hsusb_gpio_init(void)
 
 	return;
 }
+
+int emmc_recovery_init(void)
+{
+	int rc;
+	rc = _emmc_recovery_init();
+	return rc;
+}
+
