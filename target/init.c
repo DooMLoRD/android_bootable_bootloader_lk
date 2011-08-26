@@ -87,3 +87,8 @@ __WEAK void target_serialno(unsigned char *buf)
 {
 	sprintf(buf, "%s",TARGET(BOARD));
 }
+
+__WEAK int emmc_recovery_init(void)
+{
+	return 0;
+}

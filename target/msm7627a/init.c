@@ -288,3 +288,13 @@ unsigned target_pause_for_battery_charge(void)
 void target_battery_charging_enable(unsigned enable, unsigned disconnect)
 {
 }
+
+#if _EMMC_BOOT
+int emmc_recovery_init(void)
+{
+	int rc;
+	rc = _emmc_recovery_init();
+	return rc;
+}
+#endif
+
