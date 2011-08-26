@@ -92,3 +92,12 @@ __WEAK int emmc_recovery_init(void)
 {
 	return 0;
 }
+
+__WEAK bool target_use_signed_kernel(void)
+{
+#if _SIGNED_KERNEL
+	return 1;
+#else
+	return 0;
+#endif
+}
