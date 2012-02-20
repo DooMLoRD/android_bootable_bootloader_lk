@@ -21,7 +21,8 @@ OBJS += \
 	$(LOCAL_DIR)/interrupts.o \
 	$(LOCAL_DIR)/gpio.o \
 	$(LOCAL_DIR)/panel.o \
-	$(LOCAL_DIR)/acpuclock.o
+	$(LOCAL_DIR)/acpuclock.o \
+	$(LOCAL_DIR)/remote_spinlock.o
 
 ifeq ($(ENABLE_TRUSTZONE),1)
 	ifeq ($(ENABLE_ROMLITE_LOCAL_TEST), 1)
