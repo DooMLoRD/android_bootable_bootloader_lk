@@ -39,9 +39,6 @@
 #include <smem.h>
 #include <reg.h>
 #include <platform/iomap.h>
-#ifdef TARGET_USES_RSPIN_LOCK
-#include <platform/remote_spinlock.h>
-#endif
 
 #define LINUX_MACHTYPE_7x30_SURF          2679
 #define LINUX_MACHTYPE_7x30_FFA           2707
@@ -179,11 +176,6 @@ void target_init(void)
 	int i;
 
 	dprintf(INFO, "target_init()\n");
-
-#ifdef TARGET_USES_RSPIN_LOCK
-	if(remote_spinlock_init(&rlock))
-		dprintf(SPEW,"Failed to Initialize remote spin locks\n");
-#endif
 
 #if (!ENABLE_NANDWRITE)
 	keys_init();
