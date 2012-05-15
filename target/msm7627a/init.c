@@ -282,13 +282,13 @@ void board_info(void)
 		{
 			case 0x1:
 				/* Set the machine type based on msm ID */
-				if (msm_is_7x25a())
+				if (msm_is_7x25a(target_msm_id))
 					hw_platform = MSM7X25A_SURF;
 				else
 					hw_platform = MSM7X27A_SURF;
 				break;
 			case 0x2:
-				if (msm_is_7x25a())
+				if (msm_is_7x25a(target_msm_id))
 					hw_platform = MSM7X25A_FFA;
 				else
 					hw_platform = MSM7X27A_FFA;
@@ -297,7 +297,7 @@ void board_info(void)
 				hw_platform = MSM7X27A_QRD1;
 				break;
 			default:
-				if (msm_is_7x25a())
+				if (msm_is_7x25a(target_msm_id))
 					hw_platform = MSM7X25A_SURF;
 				else
 					hw_platform = MSM7X27A_SURF;
