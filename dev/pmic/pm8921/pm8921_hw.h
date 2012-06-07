@@ -112,3 +112,5 @@
 #define IRQ_BLOCK_SEL_USR_ADDR           0x1C0
 #define IRQ_STATUS_RT_USR_ADDR           0x1C3
 
+#define PM8921_RTC_CTRL                  0x11D
+#define PM8921_RTC_ALARM_ENABLE          (1 << 1)

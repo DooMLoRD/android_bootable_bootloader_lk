@@ -118,6 +118,5 @@ int pm8921_config_led_current(enum pm8921_leds led_num,
 int pm8921_config_drv_keypad(unsigned int drv_flash_sel,
 	unsigned int flash_logic,
 	unsigned int flash_ensel);
-
-
+int pm8921_rtc_alarm_disable(void);
 #endif
