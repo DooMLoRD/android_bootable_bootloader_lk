@@ -191,6 +191,8 @@ enum {
     MSM7225AB = 131,
     MSM7625AB = 132,
     ESM7225AB = 133,
+    MSM7125A  = 135,
+    MSM7127A  = 136,
 };
 
 enum platform
