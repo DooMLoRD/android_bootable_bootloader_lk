@@ -293,6 +293,7 @@ void board_info(void)
 		case MSM7225AB:
 		case MSM7625AB:
 		case ESM7225AB:
+		case MSM7125A:
 			target_msm_id = MSM7625A;
 			break;
 		default:
@@ -457,6 +458,7 @@ int msm_is_7x25a(int msm_id)
 		case MSM7225AB:
 		case MSM7625AB:
 		case ESM7225AB:
+		case MSM7125A:
 			ret = 1;
 			break;
 		default:
