@@ -1,7 +1,7 @@
 LOCAL_DIR := $(GET_LOCAL_DIR)
 
 INCLUDES += \
-			-I$(LOCAL_DIR)/include
+			-I$(LOCAL_DIR)/include -I$(LK_TOP_DIR)/dev/panel/msm
 
 DEFINES += $(TARGET_XRES)
 DEFINES += $(TARGET_YRES)
@@ -53,7 +53,8 @@ ifeq ($(PLATFORM),msm8960)
 			$(LOCAL_DIR)/display.o \
 			$(LOCAL_DIR)/lvds.o \
 			$(LOCAL_DIR)/mipi_dsi_phy.o \
-			$(LOCAL_DIR)/timer.o
+			$(LOCAL_DIR)/timer.o \
+			$(LOCAL_DIR)/mdp_lcdc.o
 endif
 
 ifeq ($(PLATFORM),copper)
@@ -77,7 +78,9 @@ ifeq ($(PLATFORM),msm7x27a)
 			$(LOCAL_DIR)/interrupts.o \
 			$(LOCAL_DIR)/timer.o \
 			$(LOCAL_DIR)/display.o \
-			$(LOCAL_DIR)/mipi_dsi_phy.o
+			$(LOCAL_DIR)/mipi_dsi_phy.o \
+			$(LOCAL_DIR)/mdp_lcdc.o \
+			$(LOCAL_DIR)/spi.o
 endif
 
 ifeq ($(PLATFORM),msm7k)
