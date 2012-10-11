@@ -66,6 +66,7 @@ unsigned msm_version = 0;
 static crypto_engine_type platform_ce_type = CRYPTO_ENGINE_TYPE_SW;
 
 int machine_is_evb();
+int machine_is_skud();
 
 /* for these partitions, start will be offset by either what we get from
  * smem, or from the above offset if smem is not useful. Also, we should
@@ -248,6 +249,9 @@ void board_info(void)
 				break;
 			case 0x10:
 				hw_platform = MSM8X25_EVT;
+				break;
+			case 0x11:
+				hw_platform = MSM8X25Q_SKUD;
 				break;
 			case 0xC:
 				hw_platform = MSM8X25_EVB;
@@ -540,6 +544,20 @@ int machine_is_qrd()
 	}
 	return ret;
 }
+int machine_is_skud()
+{
+	int ret = 0;
+	unsigned mach_type = board_machtype();
+
+	switch(mach_type) {
+		case MSM8X25Q_SKUD:
+			ret = 1;
+			break;
+		default:
+			ret = 0;
+	}
+	return ret;
+}
 int machine_is_8x25()
 {
 	int ret = 0;
@@ -551,6 +569,7 @@ int machine_is_8x25()
 		case MSM8X25_EVB:
 		case MSM8X25_EVT:
 		case MSM8X25_QRD7:
+		case MSM8X25Q_SKUD:
 			ret = 1;
 			break;
 		default:
