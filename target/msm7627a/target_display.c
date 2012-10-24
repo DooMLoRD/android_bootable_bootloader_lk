@@ -40,6 +40,7 @@ extern int msm_display_off();
 extern int mipi_renesas_panel_dsi_config(int);
 extern int mipi_nt35510_panel_dsi_config(int);
 extern int lcdc_truly_panel_on(int);
+extern int mipi_hx8389b_panel_dsi_config(int);
 
 static int msm7627a_mdp_clock_init(int enable)
 {
@@ -144,6 +145,19 @@ void display_init(void)
 		panel.fb.format = FB_FORMAT_RGB565;
 		panel.mdp_rev = MDP_REV_303;
 		break;
+	case MSM8X25Q_SKUD:
+               mipi_hx8389b_video_qhd_init(&(panel.panel_info));
+               panel.clk_func = msm7627a_mdp_clock_init;
+               panel.power_func = mipi_hx8389b_panel_dsi_config;
+               panel.fb.base = MIPI_FB_ADDR;
+               panel.fb.width =  panel.panel_info.xres;
+               panel.fb.height =  panel.panel_info.yres;
+               panel.fb.stride =  panel.panel_info.xres;
+               panel.fb.bpp =  panel.panel_info.bpp;
+               panel.fb.format = FB_FORMAT_RGB888;
+               panel.mdp_rev = MDP_REV_303;
+               break;
+
 	default:
 		return;
 	};

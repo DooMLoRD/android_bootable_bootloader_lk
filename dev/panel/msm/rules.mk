@@ -18,5 +18,7 @@ OBJS += \
 	$(LOCAL_DIR)/mipi_nt35510.o \
 	$(LOCAL_DIR)/mipi_nt35510_video_wvga.o \
 	$(LOCAL_DIR)/mipi_nt35510_cmd_wvga.o \
-	$(LOCAL_DIR)/lcdc_truly_hvga.o
+	$(LOCAL_DIR)/lcdc_truly_hvga.o \
+        $(LOCAL_DIR)/mipi_hx8389b.o \
+        $(LOCAL_DIR)/mipi_hx8389b_video_qhd.o
 endif
