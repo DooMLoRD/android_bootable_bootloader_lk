@@ -120,8 +120,9 @@ void target_init(void)
 	{
 		msm8930_keypad_init();
 	}
-	else if( (platform_id == APQ8064) ||
-		 (platform_id == MPQ8064))
+	else if((platform_id == APQ8064) ||
+		    (platform_id == MPQ8064) ||
+		    (platform_id == APQ8064AB))
 	{
 		apq8064_keypad_init();
 	}
@@ -375,7 +376,7 @@ void target_detect(struct board_data *board)
 		default:
 			target_id = LINUX_MACHTYPE_8064_MPQ_CDP;
 		}
-	} else if ((platform == APQ8064)) {
+	} else if ((platform == APQ8064) || (platform == APQ8064AB)) {
 		switch (platform_hw) {
 		case HW_PLATFORM_SURF:
 			target_id = LINUX_MACHTYPE_8064_CDP;
@@ -414,7 +415,7 @@ void target_baseband_detect(struct board_data *board)
 		baseband = BASEBAND_SGLTE;
 	else if (platform == APQ8060)
 		baseband = BASEBAND_APQ;
-	else if (platform == APQ8064)
+	else if ((platform == APQ8064) || (platform == APQ8064AB))
 		baseband = BASEBAND_APQ;
 	else if (platform == MPQ8064)
 		baseband = BASEBAND_APQ;
