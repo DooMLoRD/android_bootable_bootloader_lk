@@ -239,8 +239,7 @@ enum {
 	MSM8630AB = 155,
 	MSM8230AB = 156,
 	APQ8030AB = 157,
-	MSM8125   = 167,
-	APQ8030AA = 160,
+	MSM8125   = 160,
 };
 
 enum platform {
