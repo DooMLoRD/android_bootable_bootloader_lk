@@ -413,6 +413,8 @@ void target_baseband_detect(struct board_data *board)
 		baseband = BASEBAND_MDM;
 	else if (platform_subtype == HW_PLATFORM_SUBTYPE_SGLTE)
 		baseband = BASEBAND_SGLTE;
+	else if (platform_subtype == HW_PLATFORM_SUBTYPE_DSDA)
+		baseband = BASEBAND_DSDA;
 	else if (platform == APQ8060)
 		baseband = BASEBAND_APQ;
 	else if ((platform == APQ8064) || (platform == APQ8064AB))
