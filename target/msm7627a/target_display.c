@@ -146,6 +146,7 @@ void display_init(void)
 		panel.mdp_rev = MDP_REV_303;
 		break;
 	case MSM8X25Q_SKUD:
+	case MSM8X25Q_EVBD:
                mipi_hx8389b_video_qhd_init(&(panel.panel_info));
                panel.clk_func = msm7627a_mdp_clock_init;
                panel.power_func = mipi_hx8389b_panel_dsi_config;
