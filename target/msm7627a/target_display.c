@@ -145,6 +145,7 @@ void display_init(void)
 		panel.fb.format = FB_FORMAT_RGB565;
 		panel.mdp_rev = MDP_REV_303;
 		break;
+	case MSM8X25Q_SKUD_PRIME:
 	case MSM8X25Q_SKUD:
 	case MSM8X25Q_EVBD:
                mipi_hx8389b_video_qhd_init(&(panel.panel_info));

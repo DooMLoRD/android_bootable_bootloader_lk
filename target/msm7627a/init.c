@@ -259,9 +259,9 @@ void board_info(void)
 			case 0x11:
 				if ((target_msm_id >= MSM8225Q)
 					&& (target_msm_id <= MSM8125Q))
-					hw_platform = MSM8X25Q_EVBD;
-				else
 					hw_platform = MSM8X25Q_SKUD;
+				else
+					hw_platform = MSM8X25Q_SKUD_PRIME;
 				break;
 			case 0x12:
 			case 0x13:
@@ -565,6 +565,7 @@ int machine_is_skud()
 	unsigned mach_type = board_machtype();
 
 	switch(mach_type) {
+		case MSM8X25Q_SKUD_PRIME:
 		case MSM8X25Q_SKUD:
 		case MSM8X25Q_EVBD:
 			ret = 1;
@@ -585,6 +586,7 @@ int machine_is_8x25()
 		case MSM8X25_EVB:
 		case MSM8X25_EVT:
 		case MSM8X25_QRD7:
+		case MSM8X25Q_SKUD_PRIME:
 		case MSM8X25Q_SKUD:
 		case MSM8X25Q_EVBD:
 			ret = 1;
@@ -661,6 +663,7 @@ int target_cont_splash_screen()
 		case MSM8X25_EVB:
 		case MSM8X25_EVT:
 		case MSM8X25_QRD7:
+		case MSM8X25Q_SKUD_PRIME:
 		case MSM8X25Q_SKUD:
 		case MSM8X25Q_EVBD:
 			ret = 1;
