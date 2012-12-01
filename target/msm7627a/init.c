@@ -238,9 +238,14 @@ void board_info(void)
 		}
 
 		/* Detect SURF v/s FFA v/s QRD */
-		if (target_msm_id >= MSM8225 && target_msm_id <= MSM8625
-						|| (target_msm_id == MSM8125A)
-						|| (target_msm_id == MSM8125)) {
+		if (target_msm_id == MSM8225 ||
+			target_msm_id == ESM8225  ||
+			target_msm_id == MSM8625  ||
+			target_msm_id == MSM8125A ||
+			target_msm_id == MSM8125  ||
+			target_msm_id == MSM8225Q ||
+			target_msm_id == MSM8625Q ||
+			target_msm_id == MSM8125Q) {
 			switch (id) {
 			case 0x1:
 				hw_platform = MSM8X25_SURF;
@@ -252,7 +257,15 @@ void board_info(void)
 				hw_platform = MSM8X25_EVT;
 				break;
 			case 0x11:
-				hw_platform = MSM8X25Q_SKUD;
+				if ((target_msm_id >= MSM8225Q)
+					&& (target_msm_id <= MSM8125Q))
+					hw_platform = MSM8X25Q_EVBD;
+				else
+					hw_platform = MSM8X25Q_SKUD;
+				break;
+			case 0x12:
+			case 0x13:
+				hw_platform = MSM8X25Q_EVBD;
 				break;
 			case 0xC:
 				hw_platform = MSM8X25_EVB;
@@ -553,6 +566,7 @@ int machine_is_skud()
 
 	switch(mach_type) {
 		case MSM8X25Q_SKUD:
+		case MSM8X25Q_EVBD:
 			ret = 1;
 			break;
 		default:
@@ -572,6 +586,7 @@ int machine_is_8x25()
 		case MSM8X25_EVT:
 		case MSM8X25_QRD7:
 		case MSM8X25Q_SKUD:
+		case MSM8X25Q_EVBD:
 			ret = 1;
 			break;
 		default:
@@ -647,6 +662,7 @@ int target_cont_splash_screen()
 		case MSM8X25_EVT:
 		case MSM8X25_QRD7:
 		case MSM8X25Q_SKUD:
+		case MSM8X25Q_EVBD:
 			ret = 1;
 			break;
 		default:
