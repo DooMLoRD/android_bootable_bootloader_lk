@@ -38,7 +38,36 @@
 #include <target/display.h>
 #include <dev/gpio.h>
 
-int mipi_hx8389b_panel_dsi_config(int on)
+int mipi_hx8389b_panel_dsi_config_evbd(int on)
+{
+	if (on) {
+		gpio_tlmm_config(GPIO_CFG(5, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_2MA), 0);
+		gpio_config(5, GPIO_OUTPUT);
+		gpio_set(5, 0x1);
+
+		gpio_tlmm_config(GPIO_CFG(6, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_2MA), 0);
+		gpio_config(6, GPIO_OUTPUT);
+		gpio_set(6, 0x1);
+
+		gpio_tlmm_config(GPIO_CFG(78, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_2MA), 0);
+		gpio_config(78, GPIO_OUTPUT);
+		gpio_set(78, 0x1);
+		mdelay(20);
+		gpio_set(78, 0x0);
+		mdelay(20);
+		gpio_set(78, 0x1);
+		mdelay(20);
+	} else {
+		if (!target_cont_splash_screen()) {
+			gpio_set(78, 0x0);
+			gpio_set(5, 0x0);
+			gpio_set(6, 0x0);
+		}
+	}
+	return 0;
+}
+
+int mipi_hx8389b_panel_dsi_config_skud(int on)
 {
 	if (on) {
 		gpio_tlmm_config(GPIO_CFG(78, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_2MA), 0);

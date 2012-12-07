@@ -269,7 +269,6 @@ void mipi_hx8389b_video_qhd_init(struct msm_panel_info *pinfo)
 	pinfo->mipi.dsi_phy_db = &dsi_video_mode_phy_db;
 	pinfo->mipi.tx_eot_append = TRUE;
 
-	pinfo->mipi.lane_swap = 1;
 	pinfo->mipi.panel_cmds = hx8389b_panel_video_mode_cmds;
 	pinfo->mipi.num_of_panel_cmds = \
 			ARRAY_SIZE(hx8389b_panel_video_mode_cmds);
