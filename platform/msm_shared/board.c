@@ -88,6 +88,11 @@ static void platform_detect()
 		dprintf(CRITICAL, "Unsupported board info format\n");
 		ASSERT(0);
 	}
+	dprintf(DEBUG, "%s: Detection succeed...\n\
+	platform = 0x%X, platform_hw = 0x%X,\n\
+	platform_subtype = 0x%X, pmic_type = 0x%X, pmic_version = 0x%X",
+	board.platform, board.platform_hw, board.platform_subtype, 
+	board.pmic_type, board.pmic_version);
 }
 
 void board_init()
