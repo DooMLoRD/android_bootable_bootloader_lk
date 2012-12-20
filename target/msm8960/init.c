@@ -76,6 +76,12 @@ void target_early_init(void)
 #if WITH_DEBUG_UART
 	target_uart_init();
 #endif
+
+	dprintf(INFO, "%s: Board info:\n\
+	platform = 0x%X, platform_hw = 0x%X,\n\
+	platform_subtype = 0x%X, pmic_type = 0x%X, pmic_version = 0x%X",
+	board_platform_id(), board_hardware_id(), board_platform_subid(), 
+	board_pmic_type(), board_pmic_ver());
 }
 
 void shutdown_device(void)
@@ -262,7 +268,10 @@ void target_uart_init(void)
 {
 	unsigned target_id = board_machtype();
 
-	switch (target_id) {
+	uart_dm_init(8, 0x1A000000, 0x1A040000);
+	return;
+	
+switch (target_id) {
 	case LINUX_MACHTYPE_8960_SIM:
 	case LINUX_MACHTYPE_8960_RUMI3:
 	case LINUX_MACHTYPE_8960_CDP:
@@ -273,7 +282,7 @@ void target_uart_init(void)
 
 		if(board_baseband() == BASEBAND_SGLTE)
 		{
-			uart_dm_init(8, 0x1A000000, 0x1A040000);;
+			uart_dm_init(8, 0x1A000000, 0x1A040000);
 		}
 		else
 		{
@@ -328,7 +337,7 @@ void target_detect(struct board_data *board)
 
 	platform = board->platform;
 	platform_hw = board->platform_hw;
-
+	
 	/* Detect the board we are running on */
 	if ((platform == MSM8960) || (platform == MSM8960AB) ||
 		(platform == APQ8060AB) || (platform == MSM8260AB) ||
