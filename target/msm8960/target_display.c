@@ -40,6 +40,8 @@ static uint8_t display_enable;
 extern int msm_display_init(struct msm_fb_panel_data *pdata);
 extern int msm_display_off();
 
+extern bool board_is_mint;
+
 static int apq8064_lvds_panel_power(int enable)
 {
 	if (enable) {
@@ -287,16 +289,30 @@ void display_init(void)
 	case LINUX_MACHTYPE_8960_CDP:
 	case LINUX_MACHTYPE_8960_MTP:
 	case LINUX_MACHTYPE_8960_FLUID:
-		mipi_toshiba_video_wsvga_init(&(panel.panel_info));
-		panel.clk_func = msm8960_mipi_panel_clock;
-		panel.power_func = msm8960_mipi_panel_power;
-		panel.fb.base = 0x89000000;
-		panel.fb.width =  panel.panel_info.xres;
-		panel.fb.height =  panel.panel_info.yres;
-		panel.fb.stride =  panel.panel_info.xres;
-		panel.fb.bpp =  panel.panel_info.bpp;
-		panel.fb.format = FB_FORMAT_RGB888;
-		panel.mdp_rev = MDP_REV_42;
+		if(board_is_mint) {
+			mipi_tmd_mdx80_init(&(panel.panel_info));
+			panel.clk_func = msm8960_mipi_panel_clock;
+			panel.power_func = msm8960_mipi_panel_power;
+			panel.fb.base = MIPI_FB_ADDR;
+			panel.fb.width =  panel.panel_info.xres;
+			panel.fb.height =  panel.panel_info.yres;
+			panel.fb.stride =  panel.panel_info.xres;
+			panel.fb.bpp =  panel.panel_info.bpp;
+			panel.fb.format = FB_FORMAT_RGB888;
+			panel.mdp_rev = MDP_REV_42;
+		}
+		else {
+			mipi_toshiba_video_wsvga_init(&(panel.panel_info));
+			panel.clk_func = msm8960_mipi_panel_clock;
+			panel.power_func = msm8960_mipi_panel_power;
+			panel.fb.base = 0x89000000;
+			panel.fb.width =  panel.panel_info.xres;
+			panel.fb.height =  panel.panel_info.yres;
+			panel.fb.stride =  panel.panel_info.xres;
+			panel.fb.bpp =  panel.panel_info.bpp;
+			panel.fb.format = FB_FORMAT_RGB888;
+			panel.mdp_rev = MDP_REV_42;
+		}
 		break;
 	default:
 		return;
