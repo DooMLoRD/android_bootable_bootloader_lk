@@ -111,18 +111,6 @@ static struct mipi_dsi_cmd exit_sleep_seq[] = {
 	{sizeof(display_on), display_on},	
 };
 
-int mipi_tmd_mdx80_early_config(void *pdata)
-{
-	uint32_t tmp;
-	uint32_t reg = DSI_LANE_CTRL;
-	struct msm_panel_info *pinfo = (struct msm_panel_info *)pdata;
-
-	/* Force DSI-clock ON */
-	tmp = readl_relaxed(reg);
-	tmp |= (1<<28);
-	writel_relaxed(tmp, reg);
-}
-
 int mipi_tmd_mdx80_config(void *pdata)
 {
 	int ret = NO_ERROR;	
@@ -156,7 +144,6 @@ int mipi_tmd_mdx80_config(void *pdata)
 			low_pwr_stop_mode,
 			eof_bllp_pwr,
 			interleav);
-	ret = mipi_dsi_cmds_tx(mcap_seq, ARRAY_SIZE(mcap_seq));
 	return ret;
 }
 
@@ -198,7 +185,6 @@ void mipi_tmd_mdx80_init(struct msm_panel_info *pinfo)
 	pinfo->lcdc.v_front_porch = 9;
 	pinfo->lcdc.v_pulse_width = 4;
 	pinfo->lcdc.hsync_skew = 0;
-	pinfo->lvds.channel_mode = LVDS_SINGLE_CHANNEL_MODE;
 
 	pinfo->lcdc.border_clr = 0;		/* black */
 	pinfo->lcdc.underflow_clr = 0xff;	/* blue */
@@ -236,16 +222,15 @@ void mipi_tmd_mdx80_init(struct msm_panel_info *pinfo)
 
 	/* mipi - command mode */
 	pinfo->mipi.stream = false; /* dma_p */
-	pinfo->mipi.mdp_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo->mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
 
 	pinfo->mipi.num_of_lanes = 4; /* lanes 0, 1, 2, 3 are enabled */
-	pinfo->mipi.panel_cmds = NULL; /* use in mipi_dsi_panel_initialize() */
-	pinfo->mipi.num_of_panel_cmds = 0;
+	
+	pinfo->mipi.panel_cmds = mcap_seq;
+	pinfo->mipi.num_of_panel_cmds = ARRAY_SIZE(mcap_seq);
 
 	/* Provide config/on/off callbacks */	
 	pinfo->on = mipi_tmd_mdx80_on;
 	pinfo->off = mipi_tmd_mdx80_off;
 	pinfo->config = mipi_tmd_mdx80_config;
-	pinfo->early_config = mipi_tmd_mdx80_early_config;
 }
