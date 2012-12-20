@@ -78,9 +78,21 @@
 #define MIPI_DSI_MRPS       0x04	/* Maximum Return Packet Size */
 #define MIPI_DSI_REG_LEN    16	/* 4 x 4 bytes register */
 
-#define DTYPE_GEN_WRITE2 0x23	/* 4th Byte is 0x80 */
-#define DTYPE_GEN_LWRITE 0x29	/* 4th Byte is 0xc0 */
-#define DTYPE_DCS_WRITE1 0x15	/* 4th Byte is 0x80 */
+/* dcs read/write */
+#define DTYPE_DCS_WRITE		0x05	/* short write, 0 parameter */
+#define DTYPE_DCS_WRITE1	0x15	/* short write, 1 parameter, 4th Byte is 0x80 */
+#define DTYPE_DCS_READ		0x06	/* read */
+#define DTYPE_DCS_LWRITE	0x39	/* long write */
+
+/* generic read/write */
+#define DTYPE_GEN_WRITE		0x03	/* short write, 0 parameter */
+#define DTYPE_GEN_WRITE1	0x13	/* short write, 1 parameter */
+#define DTYPE_GEN_WRITE2	0x23	/* short write, 2 parameter, 4th Byte is 0x80 */
+#define DTYPE_GEN_LWRITE	0x29	/* long write, 4th Byte is 0xc0 */
+#define DTYPE_GEN_READ		0x04	/* long read, 0 parameter */
+#define DTYPE_GEN_READ1		0x14	/* long read, 1 parameter */
+#define DTYPE_GEN_READ2		0x24	/* long read, 2 parameter */
+
 
 //BEGINNING OF Tochiba Config- video mode
 

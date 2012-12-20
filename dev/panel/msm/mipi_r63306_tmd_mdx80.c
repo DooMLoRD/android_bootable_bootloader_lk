@@ -22,6 +22,95 @@
 #include <mdp4.h>
 #include <clock.h>
 
+static struct mipi_dsi_phy_ctrl dsi_video_mode_phy_db = {
+	/* 720*1280, RGB888, 4 Lane 60 fps video mode */	
+	/* regulator */
+	.regulator = {0x03, 0x0a, 0x04, 0x00, 0x20},
+	/* timing */
+	.timing = {0x7b, 0x1b, 0x12, 0x00, 0x40, 0x49, 0x17, 0x1e,
+	 0x1e, 0x03, 0x04, 0xa0},	
+	/* phy ctrl */
+	.ctrl = {0x5f, 0x00, 0x00, 0x10},	
+	/* strength */
+	.strength = {0xff, 0x00, 0x06, 0x00},	
+	/* pll control */
+	.pll = {0x00, 0x9e, 0x31, 0xd9, 0x00, 0x50, 0x48, 0x63,
+	 0x41, 0x0f, 0x03,
+	 0x00, 0x14, 0x03, 0x00, 0x02, 0x00, 0x20, 0x00, 0x01 },
+};
+
+/* Initial Sequence */
+static char mcap[] = {
+	0xB0, 0x00, DTYPE_GEN_WRITE2, 0x80
+};
+
+/* Display ON Sequence */
+static char cabc_on_off[] = {
+	0xBB, 0x0B, DTYPE_GEN_WRITE2, 0x80
+};
+static char pwm_dimming_control[] = {
+	0xBC, 0x00, DTYPE_GEN_WRITE2, 0x80
+};
+static char pwm_setting_1[] = {
+	0x10, 0x00, DTYPE_GEN_LWRITE, 0xC0, /* LONG | LAST */
+	0xB7, 0x18, 0x00, 0x18,
+	0x18, 0x0C, 0x14, 0xAC,
+	0x14, 0x6C, 0x14, 0x0C, 
+	0x14, 0x00,	0x10, 0x00
+};
+static char pwm_setting_2[] = {
+	0x0E, 0x00, DTYPE_GEN_LWRITE, 0xC0, /* LONG | LAST */
+	0xB8, 0xF8, 0xDA, 0x6D, 
+	0xFB, 0xFF, 0xFF, 0xCF,
+	0x1F, 0x37, 0x5A, 0x87,
+	0xBE, 0xFF, 0xFF, 0xFF
+};
+static char cabc_user_param[] = {
+	0x0D, 0x00, DTYPE_GEN_LWRITE, 0xC0, /* LONG | LAST */
+	0xBE, 0xFF, 0x0F, 0x00,
+	0x0C, 0x10, 0x02, 0x00,
+	0x5D, 0x00, 0x00, 0x80,
+	0x32, 0xFF, 0xFF, 0xFF
+};
+static char exit_sleep[] = {
+	0x11, 0x00, DTYPE_DCS_WRITE, 0x80,
+};
+static char display_on[] = {
+	0x29, 0x00, DTYPE_DCS_WRITE, 0x80,
+};
+
+/* Display OFF Sequence */
+static char enter_sleep[] = {
+	0x10, 0x00, DTYPE_DCS_WRITE, 0x80,
+};
+
+/* Reading DDB Sequence */
+static char read_ddb_start[] = {
+	0xA1, 0x00, DTYPE_DCS_READ, 0xA0 /* ACK | LAST */
+};
+
+static struct mipi_dsi_cmd mcap_seq[] = {
+	{sizeof(mcap), mcap},
+};
+
+static struct mipi_dsi_cmd enter_sleep_seq[] = {
+	{sizeof(enter_sleep), enter_sleep},
+};
+
+static struct mipi_dsi_cmd power_on_seq[] = {
+	{sizeof(exit_sleep), exit_sleep},
+};
+
+static struct mipi_dsi_cmd exit_sleep_seq[] = {
+	{sizeof(mcap), mcap},
+	{sizeof(cabc_on_off), cabc_on_off},
+	{sizeof(pwm_dimming_control), pwm_dimming_control},
+	{sizeof(pwm_setting_1), pwm_setting_1},
+	{sizeof(pwm_setting_2), pwm_setting_2},
+	{sizeof(cabc_user_param), cabc_user_param},
+	{sizeof(display_on), display_on},	
+};
+
 int mipi_tmd_mdx80_early_config(void *pdata)
 {
 	uint32_t tmp;
@@ -32,8 +121,6 @@ int mipi_tmd_mdx80_early_config(void *pdata)
 	tmp = readl_relaxed(reg);
 	tmp |= (1<<28);
 	writel_relaxed(tmp, reg);
-
-	mipi_d2l_dsi_init_sequence(pinfo);
 }
 
 int mipi_tmd_mdx80_config(void *pdata)
@@ -69,80 +156,26 @@ int mipi_tmd_mdx80_config(void *pdata)
 			low_pwr_stop_mode,
 			eof_bllp_pwr,
 			interleav);
-
+	ret = mipi_dsi_cmds_tx(mcap_seq, ARRAY_SIZE(mcap_seq));
 	return ret;
 }
 
 int mipi_tmd_mdx80_on()
 {
 	int ret = NO_ERROR;
+	ret = mipi_dsi_cmds_tx(exit_sleep_seq, ARRAY_SIZE(exit_sleep_seq));
+	mdelay(120);
+	ret = mipi_dsi_cmds_tx(power_on_seq, ARRAY_SIZE(power_on_seq));
 	return ret;
 }
 
 int mipi_tmd_mdx80_off()
 {
 	int ret = NO_ERROR;
+	ret = mipi_dsi_cmds_tx(enter_sleep_seq, ARRAY_SIZE(enter_sleep_seq));
+	mdelay(120);
 	return ret;
 }
-
-static struct mipi_dsi_phy_ctrl dsi_video_mode_phy_db = {
-	/* 720*1280, RGB888, 4 Lane 60 fps video mode */	
-	/* regulator */
-	.regulator = {0x03, 0x0a, 0x04, 0x00, 0x20},
-	/* timing */
-	.timing = {0x7b, 0x1b, 0x12, 0x00, 0x40, 0x49, 0x17, 0x1e,
-	 0x1e, 0x03, 0x04, 0xa0},	
-	/* phy ctrl */
-	.ctrl = {0x5f, 0x00, 0x00, 0x10},	
-	/* strength */
-	.strength = {0xff, 0x00, 0x06, 0x00},	
-	/* pll control */
-	.pll = {0x00, 0x9e, 0x31, 0xd9, 0x00, 0x50, 0x48, 0x63,
-	 0x41, 0x0f, 0x03,
-	 0x00, 0x14, 0x03, 0x00, 0x02, 0x00, 0x20, 0x00, 0x01 },
-};
-
-/* Initial Sequence */
-static char mcap[] = {
-	0xB0, 0x00
-};
-
-/* Display ON Sequence */
-static char cabc_on_off[] = {
-	0xBB, 0x0B
-};
-static char pwm_dimming_control[] = {
-	0xBC, 0x00
-};
-static char pwm_setting_1[] = {
-	0xB7, 0x18, 0x00, 0x18, 0x18, 0x0C, 0x14,
-	0xAC, 0x14, 0x6C, 0x14, 0x0C, 0x14, 0x00,
-	0x10, 0x00
-};
-static char pwm_setting_2[] = {
-	0xB8, 0xF8, 0xDA, 0x6D, 0xFB, 0xFF, 0xFF,
-	0xCF, 0x1F, 0x37, 0x5A, 0x87, 0xBE, 0xFF
-};
-static char cabc_user_param[] = {
-	0xBE, 0xFF, 0x0F, 0x00, 0x0C, 0x10, 0x02,
-	0x00, 0x5D, 0x00, 0x00, 0x80, 0x32
-};
-static char exit_sleep[] = {
-	0x11
-};
-static char display_on[] = {
-	0x29
-};
-
-/* Display OFF Sequence */
-static char enter_sleep[] = {
-	0x10
-};
-
-/* Reading DDB Sequence */
-static char read_ddb_start[] = {
-	0xA1, 0x00
-};
 
 void mipi_tmd_mdx80_init(struct msm_panel_info *pinfo)
 {
@@ -177,11 +210,10 @@ void mipi_tmd_mdx80_init(struct msm_panel_info *pinfo)
 	pinfo->mipi.rgb_swap = DSI_RGB_SWAP_RGB;
 	pinfo->mipi.tx_eot_append = true;
 	pinfo->mipi.t_clk_post = 0x04;
-	pinfo->mipi.t_clk_pre = 0x1b;		/* Calculated */
+	pinfo->mipi.t_clk_pre = 0x1b;
 
 	pinfo->mipi.dsi_phy_db = &dsi_video_mode_phy_db;
 
-	/* Four lanes are recomended for 1366x768 at 60 frames per second */
 	pinfo->mipi.frame_rate = 60; /* 60 frames per second */
 	pinfo->mipi.data_lane0 = true;
 	pinfo->mipi.data_lane1 = true;
