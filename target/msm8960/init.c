@@ -59,6 +59,7 @@ static unsigned mmc_sdc_base[] =
     { MSM_SDC1_BASE, MSM_SDC2_BASE, MSM_SDC3_BASE, MSM_SDC4_BASE };
 
 static pm8921_dev_t pmic;
+bool board_is_mint = false;
 
 /* Setting this variable to different values defines the
  * behavior of CE engine:
@@ -267,11 +268,8 @@ void target_fastboot_init(void)
 void target_uart_init(void)
 {
 	unsigned target_id = board_machtype();
-
-	uart_dm_init(8, 0x1A000000, 0x1A040000);
-	return;
 	
-switch (target_id) {
+	switch (target_id) {
 	case LINUX_MACHTYPE_8960_SIM:
 	case LINUX_MACHTYPE_8960_RUMI3:
 	case LINUX_MACHTYPE_8960_CDP:
@@ -280,7 +278,7 @@ switch (target_id) {
 	case LINUX_MACHTYPE_8960_APQ:
 	case LINUX_MACHTYPE_8960_LIQUID:
 
-		if(board_baseband() == BASEBAND_SGLTE)
+		if(board_baseband() == BASEBAND_SGLTE || board_is_mint)
 		{
 			uart_dm_init(8, 0x1A000000, 0x1A040000);
 		}
@@ -355,6 +353,10 @@ void target_detect(struct board_data *board)
 			break;
 		case HW_PLATFORM_LIQUID:
 			target_id = LINUX_MACHTYPE_8960_LIQUID;
+			break;
+		case HW_PLATFORM_UNKNOWN: /* MINT */
+			target_id = LINUX_MACHTYPE_8960_CDP;
+			board_is_mint = true;
 			break;
 		default:
 			target_id = LINUX_MACHTYPE_8960_CDP;
