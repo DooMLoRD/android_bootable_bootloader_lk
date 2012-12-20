@@ -46,6 +46,7 @@ void board_init();
 void target_detect(struct board_data *);
 void target_baseband_detect(struct board_data *);
 uint32_t board_platform_id();
+uint32_t board_platform_subid();
 uint32_t board_target_id();
 uint32_t board_baseband();
 uint32_t board_hardware_id();
