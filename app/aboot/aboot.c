@@ -463,7 +463,7 @@ int boot_linux_from_mmc(void)
 		goto unified_boot;
 	}
 	if (!boot_into_recovery) {
-		index = partition_get_index("boot");
+		index = partition_get_index("Android");
 		ptn = partition_get_offset(index);
 		if(ptn == 0) {
 			dprintf(CRITICAL, "ERROR: No boot partition found\n");
@@ -714,7 +714,7 @@ int boot_linux_from_flash(void)
 
 	if(!boot_into_recovery)
 	{
-	        ptn = ptable_find(ptable, "boot");
+	        ptn = ptable_find(ptable, "Android");
 
 	        if (ptn == NULL) {
 		        dprintf(CRITICAL, "ERROR: No boot partition found\n");
@@ -1236,6 +1236,9 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 	}
 	else
 	{
+
+        if(!strcmp(arg, "boot"))
+            index = "Android";
 		index = partition_get_index(arg);
 		ptn = partition_get_offset(index);
 		if(ptn == 0) {
@@ -1243,7 +1246,7 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 			return;
 		}
 
-		if (!strcmp(arg, "boot") || !strcmp(arg, "recovery")) {
+		if (!strcmp(arg, "Android") || !strcmp(arg, "recovery")) {
 			if (memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) {
 				fastboot_fail("image is not a boot image");
 				return;
@@ -1439,7 +1442,7 @@ void cmd_flash(const char *arg, void *data, unsigned sz)
 		return;
 	}
 
-	if (!strcmp(ptn->name, "boot") || !strcmp(ptn->name, "recovery")) {
+	if (!strcmp(ptn->name, "Android") || !strcmp(ptn->name, "recovery")) {
 		if (memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) {
 			fastboot_fail("image is not a boot image");
 			return;
