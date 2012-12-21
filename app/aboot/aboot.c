@@ -1581,12 +1581,16 @@ void aboot_init(const struct app_descriptor *app)
 		boot_into_recovery = 1;
 	if (keys_get_state(KEY_VOLUMEUP) != 0)
 		boot_into_recovery = 1;
+    if (keys_get_state(KEY_CAMERA_FOCUS) != 0)
+        boot_into_recovery = 1;
 	if(!boot_into_recovery)
 	{
 		if (keys_get_state(KEY_BACK) != 0)
 			goto fastboot;
 		if (keys_get_state(KEY_VOLUMEDOWN) != 0)
 			goto fastboot;
+        if (keys_get_state(KEY_CAMERA_SNAPSHOT) != 0)
+            goto fastboot;
 	}
 
 	#if NO_KEYPAD_DRIVER
