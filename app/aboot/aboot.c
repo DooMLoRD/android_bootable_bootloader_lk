@@ -1238,7 +1238,7 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 	{
 
         if(!strcmp(arg, "boot"))
-            index = "Android";
+            arg = "Android";
 		index = partition_get_index(arg);
 		ptn = partition_get_offset(index);
 		if(ptn == 0) {
