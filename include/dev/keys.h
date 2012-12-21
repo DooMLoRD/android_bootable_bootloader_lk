@@ -82,7 +82,12 @@
 #define KEY_BACK	0x123
 #define KEY_MENU	0x124
 
-#define MAX_KEYS	0x1ff
+
+/* Mapping for mint ripped directly from kernel */
+#define KEY_CAMERA_SNAPSHOT 0x2fe
+#define KEY_CAMERA_FOCUS    0x210
+
+#define MAX_KEYS	0x2ff
 
 void keys_init(void);
 void keys_post_event(uint16_t code, int16_t value);
