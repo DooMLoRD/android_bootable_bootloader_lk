@@ -41,23 +41,42 @@
 #define BITS_IN_ELEMENT(x) (sizeof(x) * 8)
 #define KEYMAP_INDEX(row, col) (row)* BITS_IN_ELEMENT(unsigned int) + (col)
 
-unsigned int msm8960_qwerty_keymap[] = {
-	[KEYMAP_INDEX(0, 0)] = KEY_VOLUMEUP,	/* Volume key on the device/CDP */
-	[KEYMAP_INDEX(0, 1)] = KEY_VOLUMEDOWN,	/* Volume key on the device/CDP */
+unsigned int msm8960_gpio_keymap[] = {
+	[KEYMAP_INDEX(0, 0)] = KEY_VOLUMEDOWN,
+	[KEYMAP_INDEX(0, 1)] = KEY_VOLUMEUP,
 };
 
 unsigned int msm8960_keys_gpiomap[] = {
-	[KEYMAP_INDEX(0, 0)] = PM_GPIO(1),	/* Volume key on the device/CDP */
-	[KEYMAP_INDEX(0, 1)] = PM_GPIO(2),	/* Volume key on the device/CDP */
+	[KEYMAP_INDEX(0, 0)] = PM_GPIO(20),
+	[KEYMAP_INDEX(0, 1)] = PM_GPIO(21),
 };
 
-struct qwerty_keypad_info msm8960_qwerty_keypad = {
-	.keymap = msm8960_qwerty_keymap,
+struct qwerty_keypad_info msm8960_gpio_keypad = {
+	.keymap = msm8960_gpio_keymap,
 	.gpiomap = msm8960_keys_gpiomap,
-	.mapsize = ARRAY_SIZE(msm8960_qwerty_keymap),
+	.mapsize = ARRAY_SIZE(msm8960_gpio_keymap),
 	.key_gpio_get = &pm8921_gpio_get,
 	.settle_time = 5 /* msec */ ,
 	.poll_time = 20 /* msec */ ,
+};
+static unsigned char qwerty_keys_old[] = { 0x00, 0x00 };
+static unsigned char qwerty_keys_new[] = { 0x00, 0x00 };
+
+unsigned int msm8960_qwerty_keymap[] = {
+	[KEYMAP_INDEX(1, 0)] = KEY_CAMERA_FOCUS,
+	[KEYMAP_INDEX(1, 1)] = KEY_CAMERA_SNAPSHOT,
+};
+struct qwerty_keypad_info msm8960_qwerty_keypad = {
+	.keymap = msm8960_qwerty_keymap,
+	.rows = 2,
+	.columns = 5,
+	.num_of_reads = 2,
+	.old_keys = qwerty_keys_old,
+	.rec_keys = qwerty_keys_new,
+	.settle_time = 5 /* msec */ ,
+	.poll_time = 20 /* msec */ ,
+	.rd_func = &pa1_ssbi2_read_bytes,
+	.wr_func = &pa1_ssbi2_write_bytes,
 };
 
 unsigned int msm8930_qwerty_keymap[] = {
@@ -129,7 +148,8 @@ struct qwerty_keypad_info apq8064_pm8917_qwerty_keypad = {
 void msm8960_keypad_init(void)
 {
 	msm8960_keypad_gpio_init();
-	ssbi_gpio_keypad_init(&msm8960_qwerty_keypad);
+	ssbi_gpio_keypad_init(&msm8960_gpio_keypad);
+	ssbi_keypad_init(&msm8960_qwerty_keypad);
 }
 
 void msm8930_keypad_init(void)
