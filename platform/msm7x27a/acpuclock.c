@@ -219,15 +219,16 @@ void acpu_clock_init(void)
 	else
 		vdd_plevel = 6;
 
-	/* Set VDD plevel */
-	writel((1 << 7) | (vdd_plevel << 3), VDD_SVS_PLEVEL_ADDR);
+	msm_id = board_msm_id();
+	if ((msm_id != MSM8225Q) && (msm_id != MSM8625Q) && (msm_id != MSM8125Q))
+		/* Set VDD plevel */
+		writel((1 << 7) | (vdd_plevel << 3), VDD_SVS_PLEVEL_ADDR);
 #if (!ENABLE_NANDWRITE)
 	thread_sleep(1);
 #else
 	mdelay(1);
 #endif
 
-	msm_id = board_msm_id();
 	switch (msm_id) {
 	case MSM7227A:
 	case MSM7627A:
