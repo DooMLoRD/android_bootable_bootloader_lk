@@ -330,6 +330,11 @@ void board_info(void)
 		case MSM8125:
 			target_msm_id = MSM8625;
 			break;
+		case MSM8225Q:
+		case MSM8625Q:
+		case MSM8125Q:
+			target_msm_id = MSM8625Q;
+			break;
 		default:
 			target_msm_id = MSM7627A;
 		}

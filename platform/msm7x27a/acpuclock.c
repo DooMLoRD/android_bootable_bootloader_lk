@@ -243,6 +243,7 @@ void acpu_clock_init(void)
 #endif
 		break;
 	case MSM8625:
+	case MSM8625Q:
 		/* Fix me: Will move to PLL4 later */
 		clk_cntl_reg_val = clk_cntl_reg_val_7627A;
 		size = ARRAY_SIZE(clk_cntl_reg_val_7627A);
