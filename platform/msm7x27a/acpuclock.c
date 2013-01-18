@@ -267,7 +267,7 @@ void acpu_clock_init(void)
 	for (; i < size; i++) {
 
 		val = readl(A11S_CLK_SEL_ADDR);
-		val |= BIT(1) | BIT(2);
+		val |= BIT(1) | BIT(2) | BIT(14);
 		writel(val, A11S_CLK_SEL_ADDR);
 
 		val = readl(A11S_CLK_CNTL_ADDR);
