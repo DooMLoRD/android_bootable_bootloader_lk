@@ -2,7 +2,7 @@
  * Copyright (c) 2009, Google Inc.
  * All rights reserved.
  *
- * Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -113,6 +113,8 @@ static const char *baseband_csfb    = " androidboot.baseband=csfb";
 static const char *baseband_svlte2a = " androidboot.baseband=svlte2a";
 static const char *baseband_mdm     = " androidboot.baseband=mdm";
 static const char *baseband_sglte   = " androidboot.baseband=sglte";
+static const char *baseband_dsda    = " androidboot.baseband=dsda";
+static const char *baseband_dsda2   = " androidboot.baseband=dsda2";
 
 /* Assuming unauthorized kernel image by default */
 static int auth_kernel_img = 0;
@@ -209,6 +211,14 @@ unsigned char *update_cmdline(const char * cmdline)
 		case BASEBAND_SGLTE:
 			cmdline_len += strlen(baseband_sglte);
 			break;
+
+		case BASEBAND_DSDA:
+			cmdline_len += strlen(baseband_dsda);
+			break;
+
+		case BASEBAND_DSDA2:
+			cmdline_len += strlen(baseband_dsda2);
+			break;
 	}
 
 	if (cmdline_len > 0) {
@@ -284,6 +294,18 @@ unsigned char *update_cmdline(const char * cmdline)
 
 			case BASEBAND_SGLTE:
 				src = baseband_sglte;
+				if (have_cmdline) --dst;
+				while ((*dst++ = *src++));
+				break;
+
+			case BASEBAND_DSDA:
+				src = baseband_dsda;
+				if (have_cmdline) --dst;
+				while ((*dst++ = *src++));
+				break;
+
+			case BASEBAND_DSDA2:
+				src = baseband_dsda2;
 				if (have_cmdline) --dst;
 				while ((*dst++ = *src++));
 				break;
