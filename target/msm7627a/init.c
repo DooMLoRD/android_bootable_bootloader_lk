@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2009, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2012, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -236,7 +236,8 @@ void board_info(void)
 
 		/* Detect SURF v/s FFA v/s QRD */
 		if (target_msm_id >= MSM8225 && target_msm_id <= MSM8625
-						|| (target_msm_id == MSM8125A)) {
+						|| (target_msm_id == MSM8125A)
+						|| (target_msm_id == MSM8125)) {
 			switch (id) {
 			case 0x1:
 				hw_platform = MSM8X25_SURF;
@@ -307,6 +308,7 @@ void board_info(void)
 		case MSM8225:
 		case MSM8625:
 		case MSM8125A:
+		case MSM8125:
 			target_msm_id = MSM8625;
 			break;
 		default:

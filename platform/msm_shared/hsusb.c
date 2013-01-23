@@ -2,45 +2,49 @@
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
  *
- * Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2012, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *     * Neither the name of The Linux Foundation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <string.h>
 #include <stdlib.h>
 #include <debug.h>
+#include <platform.h>
 #include <platform/iomap.h>
 #include <platform/irqs.h>
 #include <platform/interrupts.h>
 #include <platform/timer.h>
 #include <kernel/thread.h>
 #include <reg.h>
-
 #include <dev/udc.h>
-
 #include "hsusb.h"
+
+#define MAX_TD_XFER_SIZE  (16 * 1024)
+
 
 /* common code - factor out into a shared file */
 
@@ -154,7 +158,7 @@ struct udc_endpoint *_udc_endpoint_alloc(unsigned num, unsigned in,
 	struct udc_endpoint *ept;
 	unsigned cfg;
 
-	ept = malloc(sizeof(*ept));
+	ept = memalign(CACHE_LINE, ROUNDUP(sizeof(*ept), CACHE_LINE));
 
 	ept->maxpkt = max_pkt;
 	ept->num = num;
@@ -244,10 +248,11 @@ static void endpoint_enable(struct udc_endpoint *ept, unsigned yes)
 struct udc_request *udc_request_alloc(void)
 {
 	struct usb_request *req;
-	req = malloc(sizeof(*req));
+	req = memalign(CACHE_LINE, ROUNDUP(sizeof(*req), CACHE_LINE));
 	req->req.buf = 0;
 	req->req.length = 0;
-	req->item = memalign(32, 32);
+	req->item = memalign(CACHE_LINE, ROUNDUP(sizeof(struct ept_queue_item),
+								CACHE_LINE));
 	return &req->req;
 }
 
@@ -256,38 +261,108 @@ void udc_request_free(struct udc_request *req)
 	free(req);
 }
 
+/*
+ * Assumes that TDs allocated already are not freed.
+ * But it can handle case where TDs are freed as well.
+ */
 int udc_request_queue(struct udc_endpoint *ept, struct udc_request *_req)
 {
+	unsigned xfer = 0;
+	struct ept_queue_item *item, *curr_item;
 	struct usb_request *req = (struct usb_request *)_req;
-	struct ept_queue_item *item = req->item;
 	unsigned phys = (unsigned)req->req.buf;
+	unsigned len = req->req.length;
+	unsigned int count = 0;
 
-	item->next = TERMINATE;
-	item->info = INFO_BYTES(req->req.length) | INFO_IOC | INFO_ACTIVE;
+	curr_item = NULL;
+	xfer = (len > MAX_TD_XFER_SIZE) ? MAX_TD_XFER_SIZE : len;
+	/*
+	 * First TD allocated during request allocation
+	 */
+	item = req->item;
+	item->info = INFO_BYTES(xfer) | INFO_ACTIVE;
 	item->page0 = phys;
 	item->page1 = (phys & 0xfffff000) + 0x1000;
 	item->page2 = (phys & 0xfffff000) + 0x2000;
 	item->page3 = (phys & 0xfffff000) + 0x3000;
 	item->page4 = (phys & 0xfffff000) + 0x4000;
+	phys += xfer;
+	curr_item = item;
+	len -= xfer;
 
+	/*
+	 * If transfer length is more then
+	 * accomodate by 1 TD
+	 * we add more transfer descriptors
+	 */
+	while (len > 0) {
+		xfer = (len > MAX_TD_XFER_SIZE) ? MAX_TD_XFER_SIZE : len;
+		if (curr_item->next == TERMINATE) {
+			/*
+			 * Allocate new TD only if chain doesnot
+			 * exist already
+			 */
+			item = memalign(CACHE_LINE,
+					ROUNDUP(sizeof(struct ept_queue_item), CACHE_LINE));
+			if (!item) {
+				dprintf(ALWAYS, "allocate USB item fail ept%d"
+							"%s queue\n",
+							"td count = %d\n",
+							ept->num,
+							ept->in ? "in" : "out",
+							count);
+				return -1;
+			} else {
+				count ++;
+				curr_item->next = PA(item);
+				item->next = TERMINATE;
+			}
+		} else
+			/* Since next TD in chain already exists */
+			item = VA(curr_item->next);
+
+		/* Update TD with transfer information */
+		item->info = INFO_BYTES(xfer) | INFO_ACTIVE;
+		item->page0 = phys;
+		item->page1 = (phys & 0xfffff000) + 0x1000;
+		item->page2 = (phys & 0xfffff000) + 0x2000;
+		item->page3 = (phys & 0xfffff000) + 0x3000;
+		item->page4 = (phys & 0xfffff000) + 0x4000;
+
+		curr_item = item;
+		len -= xfer;
+		phys += xfer;
+	}
+
+	/* Terminate and set interrupt for last TD */
+	curr_item->next = TERMINATE;
+	curr_item->info |= INFO_IOC;
 	enter_critical_section();
-	ept->head->next = (unsigned)item;
+	ept->head->next = PA(req->item);
 	ept->head->info = 0;
 	ept->req = req;
-
 	arch_clean_invalidate_cache_range((addr_t) ept,
 					  sizeof(struct udc_endpoint));
 	arch_clean_invalidate_cache_range((addr_t) ept->head,
 					  sizeof(struct ept_queue_head));
 	arch_clean_invalidate_cache_range((addr_t) ept->req,
 					  sizeof(struct usb_request));
-	arch_clean_invalidate_cache_range((addr_t) req->req.buf,
+	arch_clean_invalidate_cache_range((addr_t) VA(req->req.buf),
 					  req->req.length);
-	arch_clean_invalidate_cache_range((addr_t) ept->req->item,
+
+	item = req->item;
+	/* Write all TD's to memory from cache */
+	while (item != NULL) {
+		curr_item = item;
+		if (curr_item->next == TERMINATE)
+			item = NULL;
+		else
+			item = curr_item->next;
+		arch_clean_invalidate_cache_range((addr_t) curr_item,
 					  sizeof(struct ept_queue_item));
+	}
 
 	DBG("ept%d %s queue req=%p\n", ept->num, ept->in ? "in" : "out", req);
-
 	writel(ept->bit, USB_ENDPTPRIME);
 	exit_critical_section();
 	return 0;
@@ -296,52 +371,74 @@ int udc_request_queue(struct udc_endpoint *ept, struct udc_request *_req)
 static void handle_ept_complete(struct udc_endpoint *ept)
 {
 	struct ept_queue_item *item;
-	unsigned actual;
-	int status;
+	unsigned actual, total_len;
+	int status, len;
 	struct usb_request *req;
+	void *buf;
 
 	DBG("ept%d %s complete req=%p\n",
 	    ept->num, ept->in ? "in" : "out", ept->req);
 
-	arch_clean_invalidate_cache_range((addr_t) ept,
+	arch_invalidate_cache_range((addr_t) ept,
 					  sizeof(struct udc_endpoint));
-	arch_clean_invalidate_cache_range((addr_t) ept->req,
+	req = VA(ept->req);
+	arch_invalidate_cache_range((addr_t) ept->req,
 					  sizeof(struct usb_request));
 
-	req = ept->req;
 	if (req) {
+		item = VA(req->item);
+		/* total transfer length for transacation */
+		total_len = req->req.length;
 		ept->req = 0;
+		actual = 0;
+		while(1) {
 
-		item = req->item;
+			do {
+				/*
+				 * Must clean/invalidate cached item
+				 * data before checking the status
+				 * every time.
+				 */
+				arch_invalidate_cache_range((addr_t)(item),
+							sizeof(
+							struct ept_queue_item));
 
-		/* For some reason we are getting the notification for
-		 * transfer completion before the active bit has cleared.
-		 * HACK: wait for the ACTIVE bit to clear:
-		 */
-		do {
-			/* Must clean/invalidate cached item data before checking
-			 * the status every time.
-			 */
-			arch_clean_invalidate_cache_range((addr_t) item,
-							  sizeof(struct
-								 ept_queue_item));
+			} while(readl(&item->info) & INFO_ACTIVE);
+
+			if ((item->info) & 0xff) {
+				/* error */
+				status = -1;
+				dprintf(INFO, "EP%d/%s FAIL nfo=%x pg0=%x\n",
+					ept->num, ept->in ? "in" : "out",
+					item->info,
+					item->page0);
+				goto out;
+			}
+
+			/* Check if we are processing last TD */
+			if (item->next == TERMINATE) {
+				/*
+				 * Record the data transferred for the last TD
+				 */
+				actual += total_len - (item->info >> 16)
+								& 0x7FFF;
+				total_len = 0;
+				break;
+			} else {
+				/*
+				 * Since we are not in last TD
+				 * the total assumed transfer ascribed to this
+				 * TD woulb the max possible TD transfer size
+				 * (16K)
+				 */
+				actual += MAX_TD_XFER_SIZE - (item->info >> 16) & 0x7FFF;
+				total_len -= MAX_TD_XFER_SIZE - (item->info >> 16) & 0x7FFF;
+				/*Move to next item in chain*/
+				item = VA(item->next);
+			}
 		}
-		while (readl(&(item->info)) & INFO_ACTIVE);
-
-		arch_clean_invalidate_cache_range((addr_t) req->req.buf,
-						  req->req.length);
-
-		if (item->info & 0xff) {
-			actual = 0;
-			status = -1;
-			dprintf(INFO, "EP%d/%s FAIL nfo=%x pg0=%x\n",
-				ept->num, ept->in ? "in" : "out", item->info,
-				item->page0);
-		} else {
-			actual =
-			    req->req.length - ((item->info >> 16) & 0x7fff);
-			status = 0;
-		}
+		status = 0;
+out:
 		if (req->req.complete)
 			req->req.complete(&req->req, actual, status);
 	}
@@ -423,6 +520,7 @@ static void setup_tx(void *buf, unsigned len)
 {
 	DBG("setup_tx %p %d\n", buf, len);
 	memcpy(ep0req->buf, buf, len);
+	ep0req->buf = PA((addr_t)ep0req->buf);
 	ep0req->complete = ep0in_complete;
 	ep0req->length = len;
 	udc_request_queue(ep0in, ep0req);
@@ -597,7 +695,7 @@ int udc_init(struct udc_device *dev)
 	arch_clean_invalidate_cache_range((addr_t) epts,
 					  32 * sizeof(struct ept_queue_head));
 
-	writel((unsigned)epts, USB_ENDPOINTLISTADDR);
+	writel((unsigned)PA((addr_t)epts), USB_ENDPOINTLISTADDR);
 
 	/* select DEVICE mode */
 	writel(0x02, USB_USBMODE);
@@ -608,7 +706,7 @@ int udc_init(struct udc_device *dev)
 	ep0out = _udc_endpoint_alloc(0, 0, 64);
 	ep0in = _udc_endpoint_alloc(0, 1, 64);
 	ep0req = udc_request_alloc();
-	ep0req->buf = malloc(4096);
+	ep0req->buf = memalign(CACHE_LINE, 4096);
 
 	{
 		/* create and register a language table descriptor */
