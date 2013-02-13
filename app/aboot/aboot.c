@@ -1332,13 +1332,18 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 	}
 	else
 	{
+        	if(!strcmp(arg, "boot"))
+            		arg = "Android";
+        	if(!strcmp(arg, "recovery"))
+            		arg = "FOTAKernel";
+        	if(!strcmp(arg, "bootloader"))
+            		arg = "Kernel";
 
-        if(!strcmp(arg, "boot"))
-            arg = "Android";
-        if(!strcmp(arg, "recovery"))
-            arg = "FOTAKernel";
-        if(!strcmp(arg, "bootloader"))
-            arg = "Kernel";
+        	if(!strcmp(arg, "Boot")||!strcmp(arg, "Boot2")||!strcmp(arg, "TA")||!strcmp(arg, "TZ"))
+        	{
+        		fastboot_fail("Partition protected for device safety");
+                	return;
+		}
 
 		index = partition_get_index(arg);
 		ptn = partition_get_offset(index);
