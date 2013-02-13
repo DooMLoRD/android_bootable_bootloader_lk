@@ -250,8 +250,28 @@ void target_serialno(unsigned char *buf)
 {
 	unsigned int serialno;
 	if (target_is_emmc_boot()) {
-		serialno = mmc_get_psn();
-		snprintf((char *)buf, 13, "%x", serialno);
+
+	        if(board_is_mint)
+        	{
+                	unsigned char *serial;
+
+                	serial = (unsigned char *)target_get_scratch_address();
+
+	                int index = 0;
+        	        unsigned long long ptn = 0;
+
+                	index = partition_get_index("TA");
+ 	                ptn = partition_get_offset(index);
+
+          	        ptn = (ptn + 0x40600);
+                	mmc_read(ptn, (void*)serial, 2048);
+                	serial += 0x68;
+
+                	snprintf((char *)buf, 11, "%s", serial);
+		}else{
+			serialno = mmc_get_psn();
+			snprintf((char *)buf, 13, "%x", serialno);
+		}
 	}
 }
 
