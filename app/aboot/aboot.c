@@ -564,7 +564,7 @@ int boot_linux_from_mmc(void)
 		}
 	}
 	else {
-		index = partition_get_index("recovery");
+		index = partition_get_index("FOTAKernel");
 		ptn = partition_get_offset(index);
 		if(ptn == 0) {
 			dprintf(CRITICAL, "ERROR: No recovery partition found\n");
@@ -819,7 +819,7 @@ int boot_linux_from_flash(void)
 	}
 	else
 	{
-	        ptn = ptable_find(ptable, "recovery");
+	        ptn = ptable_find(ptable, "FOTAKernel");
 	        if (ptn == NULL) {
 		        dprintf(CRITICAL, "ERROR: No recovery partition found\n");
 		        return -1;
@@ -1335,6 +1335,8 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 
         if(!strcmp(arg, "boot"))
             arg = "Android";
+        if(!strcmp(arg, "recovery"))
+            arg = "FOTAKernel";
 		index = partition_get_index(arg);
 		ptn = partition_get_offset(index);
 		if(ptn == 0) {
@@ -1342,7 +1344,7 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 			return;
 		}
 
-		if (!strcmp(arg, "Android") || !strcmp(arg, "recovery")) {
+		if (!strcmp(arg, "Android") || !strcmp(arg, "FOTAKernel")) {
 			if ((memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) && (memcmp((void *)data, ELF_MAGIC, ELF_MAGIC_SIZE)) {
 				fastboot_fail("image is not a boot image or sony elf");
 				return;
