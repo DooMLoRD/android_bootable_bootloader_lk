@@ -1670,6 +1670,7 @@ void aboot_init(const struct app_descriptor *app)
 	unsigned reboot_mode = 0;
 	unsigned usb_init = 0;
 	unsigned sz = 0;
+        time_t start_timer;
 
 	/* Setup page size information for nand/emmc reads */
 	if (target_is_emmc_boot())
@@ -1694,20 +1695,19 @@ void aboot_init(const struct app_descriptor *app)
 	surf_udc_device.serialno = sn_buf;
 
 	/* Check if we should do something other than booting up */
-	if (keys_get_state(KEY_HOME) != 0)
-		boot_into_recovery = 1;
-	if (keys_get_state(KEY_VOLUMEUP) != 0)
-		boot_into_recovery = 1;
-    if (keys_get_state(KEY_CAMERA_FOCUS) != 0)
-        boot_into_recovery = 1;
-	if(!boot_into_recovery)
-	{
-		if (keys_get_state(KEY_BACK) != 0)
-			goto fastboot;
-		if (keys_get_state(KEY_VOLUMEDOWN) != 0)
-			goto fastboot;
-        if (keys_get_state(KEY_CAMERA_SNAPSHOT) != 0)
-            goto fastboot;
+        start_timer = current_time()
+        while(true)
+        {
+
+		if (keys_get_state(KEY_HOME) != 0 || keys_get_state(KEY_VOLUMEUP) != 0)
+		{
+			boot_into_recovery = 1;
+			break;
+		}
+		if (keys_get_state(KEY_BACK) != 0 ||keys_get_state(KEY_VOLUMEDOWN) != 0)
+			goto recovery;
+		if((current_time() - start_time) >= 5000)
+			break;
 	}
 
 	#if NO_KEYPAD_DRIVER
