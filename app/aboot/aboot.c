@@ -577,6 +577,9 @@ int boot_linux_from_mmc(void)
                 return -1;
 	}
 
+        if (!memcmp(hdr->magic, ELF_MAGIC, ELF_MAGIC_SIZE))
+        	boot_elf(ptn);
+
 	if (memcmp(hdr->magic, BOOT_MAGIC, BOOT_MAGIC_SIZE)) {
 		dprintf(CRITICAL, "ERROR: Invalid boot image header\n");
                 return -1;
@@ -1340,8 +1343,8 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 		}
 
 		if (!strcmp(arg, "Android") || !strcmp(arg, "recovery")) {
-			if (memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) {
-				fastboot_fail("image is not a boot image");
+			if ((memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) && (memcmp((void *)data, ELF_MAGIC, ELF_MAGIC_SIZE)) {
+				fastboot_fail("image is not a boot image or sony elf");
 				return;
 			}
 		}
