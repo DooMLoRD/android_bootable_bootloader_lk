@@ -1699,13 +1699,24 @@ void aboot_init(const struct app_descriptor *app)
         while(true)
         {
 
-		if (keys_get_state(KEY_HOME) != 0 || keys_get_state(KEY_VOLUMEUP) != 0)
+		if(!board_is_mint)
 		{
-			boot_into_recovery = 1;
-			break;
+			if (keys_get_state(KEY_HOME) != 0 || keys_get_state(KEY_VOLUMEUP) != 0)
+			{
+				boot_into_recovery = 1;
+				break;
+			}
+			if (keys_get_state(KEY_BACK) != 0 ||keys_get_state(KEY_VOLUMEDOWN) != 0)
+				goto recovery;
+		}else{
+			if (get_keystate(20) != 0)
+			{
+				boot_into_recovery = 1;
+				break;
+			}
+			if (get_keystate(19) != 0)
+				goto recovery;
 		}
-		if (keys_get_state(KEY_BACK) != 0 ||keys_get_state(KEY_VOLUMEDOWN) != 0)
-			goto recovery;
 		if((current_time() - start_time) >= 5000)
 			break;
 	}
