@@ -58,6 +58,7 @@
 #include "image_verify.h"
 #include "recovery.h"
 #include "bootimg.h"
+#include "sonyelf.h"
 #include "fastboot.h"
 #include "sparse_format.h"
 #include "mmc.h"
@@ -434,6 +435,98 @@ static unsigned char buf[4096]; //Equal to max-supported pagesize
 #if DEVICE_TREE
 static unsigned char dt_buf[4096];
 #endif
+
+static void boot_elf(unsigned long long ptn)
+{
+    int i;
+    unsigned char *ehdr = malloc(page_size);
+    sonyelf_hdr *hdr = (void*)ehdr;
+    sonyelf_sect *sect;
+    const char *cmdline;
+    unsigned char *elf_addr;
+    unsigned elf_data;
+    sonyelf_boot *boot = malloc(sizeof(sonyelf_boot));
+    unsigned int last_offset, last_msize;
+    unsigned tags_addr;
+    int elf_has_cmdline = 0;
+
+    mmc_read(ptn, (void *)ehdr, page_size);
+    ehdr += sizeof(sonyelf_hdr);
+
+    sect = (void*)ehdr;
+
+    if(hdr->phnum < 2)
+    {
+        dprintf(CRITICAL, "Missing Kernel or Ramdisk\n");
+        return;
+    }
+
+    for(i = 1; i < (hdr->phnum + 1); i++)
+    {
+
+        if(sect->type == 0x1)
+        {
+            if(sect->flags == 0x0)
+            {
+                boot->kernel_paddr = VA((addr_t)sect->paddr);
+                boot->kernel_offset = sect->offset;
+                boot->kernel_msize = sect->msize;
+            }else if(sect->flags == RAMDISK_SECTION){
+                boot->ramdisk_paddr = VA((addr_t)sect->paddr);
+                boot->ramdisk_offset = sect->offset;
+                boot->ramdisk_msize = sect->msize;
+            }
+            dprintf(INFO, "Section: 0x%x Size: 0x%x Offset: 0x%x\n", sect->flags, sect->msize, sect->offset);
+        }
+
+	if(sect->type == 0x4)
+        {
+            if(sect->flags == CMDLINE_SECTION)
+            {
+             	elf_has_cmdline = 1;
+                boot->cmdline_offset = sect->offset;
+                boot->cmdline_msize = sect->msize;
+            }
+            dprintf(INFO, "Section: 0x%x Size: 0x%x Offset: 0x%x\n", sect->flags, sect->msize, sect->offset);
+        }
+
+
+	if(i == hdr->phnum)
+        {
+            last_offset = sect->offset;
+            last_msize = sect->msize;
+        }else{
+            ehdr += sizeof(sonyelf_sect);
+            sect = (void*)ehdr;
+        }
+
+    }
+
+    tags_addr = (boot->kernel_paddr - 0x7F00);
+
+    elf_data = (last_offset + last_msize);
+    elf_data = ROUND_TO_PAGE(elf_data, page_mask);
+    elf_addr = (unsigned char *)target_get_scratch_address();
+
+
+    mmc_read(ptn, (void *)elf_addr, elf_data);
+
+    memmove((void *)boot->kernel_paddr, (char *)(elf_addr + boot->kernel_offset), boot->kernel_msize);
+    memmove((void *)boot->ramdisk_paddr, (char *)(elf_addr + boot->ramdisk_offset), boot->ramdisk_msize);
+
+    if(elf_has_cmdline == 1)
+    {
+     	elf_addr += boot->cmdline_offset;
+        snprintf(boot->cmdline, (boot->cmdline_msize + 1), "%s", elf_addr);
+        cmdline = (char*)boot->cmdline;
+    }else{
+	cmdline = DEFAULT_CMDLINE;
+    }
+ 
+    boot_linux((void *)boot->kernel_paddr, (unsigned *)tags_addr,
+                  (const char *)cmdline, board_machtype(),
+                  (void *)boot->ramdisk_paddr, boot->ramdisk_msize);
+}
 
 int boot_linux_from_mmc(void)
 {
