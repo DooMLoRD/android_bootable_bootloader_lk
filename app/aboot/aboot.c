@@ -92,6 +92,8 @@ static const char *emmc_cmdline = " androidboot.emmc=true";
 static const char *usb_sn_cmdline = " androidboot.serialno=";
 static const char *battchg_pause = " androidboot.mode=charger";
 static const char *auth_kernel = " androidboot.authorized_kernel=true";
+static const char *bl_cmdline = " androidboot.bootloader=lk";
+static const char *hw_cmdline = " androidboot.hardware=qcom";
 
 static const char *baseband_apq     = " androidboot.baseband=apq";
 static const char *baseband_msm     = " androidboot.baseband=msm";
@@ -161,6 +163,9 @@ unsigned char *update_cmdline(const char * cmdline)
 	cmdline_len += strlen(usb_sn_cmdline);
 	cmdline_len += strlen(sn_buf);
 
+        cmdline_len +=strlen(bl_cmdline);
+        cmdline_len +=strlen(hw_cmdline);
+
 	if (target_pause_for_battery_charge()) {
 		pause_at_bootup = 1;
 		cmdline_len += strlen(battchg_pause);
@@ -225,6 +230,15 @@ unsigned char *update_cmdline(const char * cmdline)
 		have_cmdline = 1;
 		while ((*dst++ = *src++));
 		src = sn_buf;
+		if (have_cmdline) --dst;
+		have_cmdline = 1;
+		while ((*dst++ = *src++));
+
+		src = bl_cmdline;
+		if (have_cmdline) --dst;
+		have_cmdline = 1;
+		while ((*dst++ = *src++));
+		src = hw_cmdline;
 		if (have_cmdline) --dst;
 		have_cmdline = 1;
 		while ((*dst++ = *src++));
