@@ -1337,6 +1337,9 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
             arg = "Android";
         if(!strcmp(arg, "recovery"))
             arg = "FOTAKernel";
+        if(!strcmp(arg, "bootloader"))
+            arg = "Kernel";
+
 		index = partition_get_index(arg);
 		ptn = partition_get_offset(index);
 		if(ptn == 0) {
@@ -1344,7 +1347,7 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 			return;
 		}
 
-		if (!strcmp(arg, "Android") || !strcmp(arg, "FOTAKernel")) {
+		if (!strcmp(arg, "Android") || !strcmp(arg, "FOTAKernel") || !strcmp(arg, "Kernel")) {
 			if ((memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) && (memcmp((void *)data, ELF_MAGIC, ELF_MAGIC_SIZE)) {
 				fastboot_fail("image is not a boot image or sony elf");
 				return;
