@@ -68,6 +68,7 @@
 #include "scm.h"
 
 extern  bool target_use_signed_kernel(void);
+extern bool board_is_mint;
 extern void dsb();
 extern void isb();
 extern void platform_uninit(void);
@@ -1367,7 +1368,7 @@ void cmd_flash_mmc_img(const char *arg, void *data, unsigned sz)
 		}
 
 		if (!strcmp(arg, "Android") || !strcmp(arg, "FOTAKernel") || !strcmp(arg, "Kernel")) {
-			if ((memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) && (memcmp((void *)data, ELF_MAGIC, ELF_MAGIC_SIZE)) {
+			if ((memcmp((void *)data, BOOT_MAGIC, BOOT_MAGIC_SIZE)) && (memcmp((void *)data, ELF_MAGIC, ELF_MAGIC_SIZE))) {
 				fastboot_fail("image is not a boot image or sony elf");
 				return;
 			}
@@ -1709,7 +1710,7 @@ void aboot_init(const struct app_descriptor *app)
 	surf_udc_device.serialno = sn_buf;
 
 	/* Check if we should do something other than booting up */
-        start_timer = current_time()
+        start_timer = current_time();
         while(true)
         {
 
@@ -1721,7 +1722,7 @@ void aboot_init(const struct app_descriptor *app)
 				break;
 			}
 			if (keys_get_state(KEY_BACK) != 0 ||keys_get_state(KEY_VOLUMEDOWN) != 0)
-				goto recovery;
+				goto fastboot;
 		}else{
 			if (get_keystate(20) != 0)
 			{
@@ -1729,9 +1730,9 @@ void aboot_init(const struct app_descriptor *app)
 				break;
 			}
 			if (get_keystate(19) != 0)
-				goto recovery;
+				goto fastboot;
 		}
-		if((current_time() - start_time) >= 5000)
+		if((current_time() - start_timer) >= 5000)
 			break;
 	}
 
