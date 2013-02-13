@@ -1624,6 +1624,17 @@ void cmd_oem_devinfo(const char *arg, void *data, unsigned sz)
 	fastboot_okay("");
 }
 
+static int get_keystate(int gpio)
+{
+
+    uint8_t status;
+
+    pm8921_gpio_get(gpio, &status);
+
+    return status;
+
+}
+
 void splash_screen ()
 {
 	struct ptentry *ptn;
