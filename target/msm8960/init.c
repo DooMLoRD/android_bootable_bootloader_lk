@@ -61,6 +61,8 @@ static unsigned mmc_sdc_base[] =
 static pm8921_dev_t pmic;
 bool board_is_mint = false;
 
+#define TA_MAGIC "\xC1\xE9\xF8\x3B"
+
 /* Setting this variable to different values defines the
  * behavior of CE engine:
  * platform_ce_type = CRYPTO_ENGINE_TYPE_NONE : No CE engine
@@ -265,10 +267,18 @@ void target_serialno(unsigned char *buf)
                 	index = partition_get_index("TA");
  	                ptn = partition_get_offset(index);
 
-          	        ptn = (ptn + 0x40600);
-                	mmc_read(ptn, (void*)serial, 2048);
-                	serial += 0x68;
+			mmc_read(ptn, (void*)serial, 2048);
 
+			if(memcmp(serial, TA_MAGIC, 4))
+			{
+          	        	ptn = (ptn + 0x40000);
+			}
+
+			ptn = (ptn + 0x600);
+
+			mmc_read(ptn, (void*)serial, 2048);
+
+			serial += 0x68;
                 	snprintf((char *)buf, 11, "%s", serial);
 		}else{
 			serialno = mmc_get_psn();
