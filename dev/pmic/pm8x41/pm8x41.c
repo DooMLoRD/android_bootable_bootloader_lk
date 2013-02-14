@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -35,22 +35,14 @@
 #include <pm8x41.h>
 #include <platform/timer.h>
 
-/* Local Macros */
-#define REG_READ(_a)        pm8x41_reg_read(_a)
-#define REG_WRITE(_a, _v)   pm8x41_reg_write(_a, _v)
-
-#define REG_OFFSET(_addr)   ((_addr) & 0xFF)
-#define PERIPH_ID(_addr)    (((_addr) & 0xFF00) >> 8)
-#define SLAVE_ID(_addr)     ((_addr) >> 16)
-
 struct pm8x41_ldo ldo_data[] = {
 	LDO("LDO2",  NLDO_TYPE, 0x14100, LDO_RANGE_CTRL, LDO_STEP_CTRL, LDO_EN_CTL_REG),
 	LDO("LDO12", PLDO_TYPE, 0x14B00, LDO_RANGE_CTRL, LDO_STEP_CTRL, LDO_EN_CTL_REG),
 	LDO("LDO22", PLDO_TYPE, 0x15500, LDO_RANGE_CTRL, LDO_STEP_CTRL, LDO_EN_CTL_REG),
 };
 
-/* Local functions */
-static uint8_t pm8x41_reg_read(uint32_t addr)
+/* SPMI helper functions */
+uint8_t pm8x41_reg_read(uint32_t addr)
 {
 	uint8_t val = 0;
 	struct pmic_arb_cmd cmd;
@@ -69,7 +61,7 @@ static uint8_t pm8x41_reg_read(uint32_t addr)
 	return val;
 }
 
-static void pm8x41_reg_write(uint32_t addr, uint8_t val)
+void pm8x41_reg_write(uint32_t addr, uint8_t val)
 {
 	struct pmic_arb_cmd cmd;
 	struct pmic_arb_param param;
@@ -103,9 +95,6 @@ int pm8x41_gpio_config(uint8_t gpio, struct pm8x41_gpio *config)
 	uint8_t  val;
 	uint32_t gpio_base = GPIO_N_PERIPHERAL_BASE(gpio);
 
-	/* Only input configuration is implemented at this time. */
-	ASSERT(config->direction == PM_GPIO_DIR_IN);
-
 	/* Disable the GPIO */
 	val  = REG_READ(gpio_base + GPIO_EN_CTL);
 	val &= ~BIT(PERPH_EN_BIT);
@@ -123,12 +112,18 @@ int pm8x41_gpio_config(uint8_t gpio, struct pm8x41_gpio *config)
 	val = config->vin_sel;
 	REG_WRITE(gpio_base + GPIO_DIG_VIN_CTL, val);
 
+	if (config->direction == PM_GPIO_DIR_OUT) {
+		/* Set the right dig out control */
+		val = config->out_strength | (config->output_buffer << 4);
+		REG_WRITE(gpio_base + GPIO_DIG_OUT_CTL, val);
+	}
+
 	/* Enable the GPIO */
 	val  = REG_READ(gpio_base + GPIO_EN_CTL);
 	val |= BIT(PERPH_EN_BIT);
 	REG_WRITE(gpio_base + GPIO_EN_CTL, val);
 
-	return 1;
+	return 0;
 }
 
 /* Reads the status of requested gpio */
@@ -143,11 +138,25 @@ int pm8x41_gpio_get(uint8_t gpio, uint8_t *status)
 
 	dprintf(SPEW, "GPIO %d status is %d\n", gpio, *status);
 
-	return 1;
+	return 0;
 }
 
-/* Prepare PON RESIN S2 reset */
-void pm8x41_vol_down_key_prepare()
+/* Write the output value of the requested gpio */
+int pm8x41_gpio_set(uint8_t gpio, uint8_t value)
+{
+	uint32_t gpio_base = GPIO_N_PERIPHERAL_BASE(gpio);
+	uint8_t val;
+
+	/* Set the output value of the gpio */
+	val = REG_READ(gpio_base + GPIO_MODE_CTL);
+	val = (val & ~PM_GPIO_OUTPUT_MASK) | value;
+	REG_WRITE(gpio_base + GPIO_MODE_CTL, val);
+
+	return 0;
+}
+
+/* Prepare PON RESIN S2 reset (bite) */
+void pm8x41_resin_s2_reset_enable()
 {
 	uint8_t val;
 
@@ -173,8 +182,8 @@ void pm8x41_vol_down_key_prepare()
 	REG_WRITE(PON_RESIN_N_RESET_S2_CTL, val);
 }
 
-/* Volume_Down key detect cleanup */
-void pm8x41_vol_down_key_done()
+/* Disable PON RESIN S2 reset. (bite)*/
+void pm8x41_resin_s2_reset_disable()
 {
 	/* disable s2 reset */
 	REG_WRITE(PON_RESIN_N_RESET_S2_CTL, 0x0);
@@ -183,13 +192,13 @@ void pm8x41_vol_down_key_done()
 	udelay(300);
 }
 
-/* Volume_Down key status */
-int pm8x41_vol_down_key_status()
+/* Resin irq status for faulty pmic*/
+uint32_t pm8x41_resin_bark_workaround_status()
 {
 	uint8_t rt_sts = 0;
 
 	/* Enable S2 reset so we can detect the volume down key press */
-	pm8x41_vol_down_key_prepare();
+	pm8x41_resin_s2_reset_enable();
 
 	/* Delay before interrupt triggering.
 	 * See PON_DEBOUNCE_CTL reg.
@@ -201,9 +210,19 @@ int pm8x41_vol_down_key_status()
 	/* Must disable S2 reset otherwise PMIC will reset if key
 	 * is held longer than S2 timer.
 	 */
-	pm8x41_vol_down_key_done();
+	pm8x41_resin_s2_reset_disable();
 
 	return (rt_sts & BIT(RESIN_BARK_INT_BIT));
+}
+
+/* Resin pin status */
+uint32_t pm8x41_resin_status()
+{
+	uint8_t rt_sts = 0;
+
+	rt_sts = REG_READ(PON_INT_RT_STS);
+
+	return (rt_sts & BIT(RESIN_ON_INT_BIT));
 }
 
 void pm8x41_reset_configure(uint8_t reset_type)
@@ -325,3 +344,9 @@ int pm8x41_ldo_control(const char *name, uint8_t enable)
 
 	return 0;
 }
+
+uint8_t pm8x41_get_pmic_rev()
+{
+	return REG_READ(REVID_REVISION4);
+}
+

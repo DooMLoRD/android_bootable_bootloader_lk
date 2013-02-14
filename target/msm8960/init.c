@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2009, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009-2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -139,6 +139,7 @@ void target_init(void)
 		break;
 	case APQ8064:
 	case MPQ8064:
+	case APQ8064AA:
 	case APQ8064AB:
 		apq8064_keypad_init();
 		break;
@@ -156,7 +157,8 @@ void target_init(void)
 		(platform_id == APQ8060AB) || (platform_id == MSM8260AB) ||
 		(platform_id == MSM8660AB) || (platform_id == MSM8660A) ||
 		(platform_id == MSM8260A) || (platform_id == APQ8060A) ||
-		(platform_id == APQ8064))
+		(platform_id == APQ8064) || (platform_id == APQ8064AA) ||
+		(platform_id == APQ8064AB))
 		/* Enable Hardware CE */
 		platform_ce_type = CRYPTO_ENGINE_TYPE_HW;
 
@@ -327,9 +329,14 @@ void target_uart_init(void)
 		uart_dm_init(7, 0x16600000, 0x16640000);
 		break;
 
+	case LINUX_MACHTYPE_8064_EP:
+		uart_dm_init(2, 0x12480000, 0x12490000);
+		break;
+
 	case LINUX_MACHTYPE_8064_MPQ_CDP:
 	case LINUX_MACHTYPE_8064_MPQ_HRD:
 	case LINUX_MACHTYPE_8064_MPQ_DTV:
+	case LINUX_MACHTYPE_8064_MPQ_DMA:
 		uart_dm_init(5, 0x1A200000, 0x1A240000);
 		break;
 
@@ -423,10 +430,14 @@ void target_detect(struct board_data *board)
 		case HW_PLATFORM_DTV:
 			target_id = LINUX_MACHTYPE_8064_MPQ_DTV;
 			break;
+		case HW_PLATFORM_DMA:
+			target_id = LINUX_MACHTYPE_8064_MPQ_DMA;
+			break;
 		default:
 			target_id = LINUX_MACHTYPE_8064_MPQ_CDP;
 		}
-	} else if ((platform == APQ8064) || (platform == APQ8064AB)) {
+	} else if ((platform == APQ8064) || (platform == APQ8064AA)
+					 || (platform == APQ8064AB)) {
 		switch (platform_hw) {
 		case HW_PLATFORM_SURF:
 			target_id = LINUX_MACHTYPE_8064_CDP;
@@ -436,6 +447,9 @@ void target_detect(struct board_data *board)
 			break;
 		case HW_PLATFORM_LIQUID:
 			target_id = LINUX_MACHTYPE_8064_LIQUID;
+			break;
+		case HW_PLATFORM_BTS:
+			target_id = LINUX_MACHTYPE_8064_EP;
 			break;
 		default:
 			target_id = LINUX_MACHTYPE_8064_CDP;
@@ -465,10 +479,13 @@ void target_baseband_detect(struct board_data *board)
 		baseband = BASEBAND_SGLTE;
 	else if (platform_subtype == HW_PLATFORM_SUBTYPE_DSDA)
 		baseband = BASEBAND_DSDA;
+	else if (platform_subtype == HW_PLATFORM_SUBTYPE_DSDA2)
+		baseband = BASEBAND_DSDA2;
 	else {
 		switch(platform) {
 		case APQ8060:
 		case APQ8064:
+		case APQ8064AA:
 		case APQ8064AB:
 		case APQ8030AB:
 		case MPQ8064:

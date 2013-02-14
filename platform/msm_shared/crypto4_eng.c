@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -42,21 +42,29 @@ extern void ce_async_reset();
 
 void wr_ce(uint32_t val,uint32_t reg)
 {
+    uint32_t platform_id;
 
-	if(board_platform_id() != APQ8064)
-		writel(val,CRYPTO_ENG_REG(CE1_CRYPTO4_BASE, reg));
-	else
+	platform_id = board_platform_id();
+
+	if((platform_id == APQ8064) || (platform_id == APQ8064AA)
+		|| (platform_id == APQ8064AB))
 		writel(val,CRYPTO_ENG_REG(CE3_CRYPTO4_BASE, reg));
+	else
+		writel(val,CRYPTO_ENG_REG(CE1_CRYPTO4_BASE, reg));
 }
 uint32_t rd_ce(uint32_t reg)
 {
 
 	uint32_t val;
+    uint32_t platform_id;
 
-	if(board_platform_id() != APQ8064)
-		val = readl(CRYPTO_ENG_REG(CE1_CRYPTO4_BASE, reg));
+	platform_id = board_platform_id();
+
+	if((platform_id == APQ8064) || (platform_id == APQ8064AA)
+		|| (platform_id == APQ8064AB))
+		val = readl(CRYPTO_ENG_REG(CE3_CRYPTO4_BASE, reg));
 	else
-        val = readl(CRYPTO_ENG_REG(CE3_CRYPTO4_BASE, reg));
+		val = readl(CRYPTO_ENG_REG(CE1_CRYPTO4_BASE, reg));
 
 	return val;
 }
@@ -381,4 +389,10 @@ void crypto_get_ctx(void *ctx_ptr)
 	((crypto_SHA1_ctx *) ctx_ptr)->auth_bytecnt[1] =
 	    rd_ce(CRYPTO_AUTH_BYTECNTn(1));
 	return;
+}
+
+/* Returns the max authentication block size */
+uint32_t crypto_get_max_auth_blk_size()
+{
+	return 0xFA00;
 }

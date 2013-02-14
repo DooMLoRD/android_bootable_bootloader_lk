@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -9,7 +9,7 @@
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- *     * Neither the name of Code Aurora Forum, Inc. nor the names of its
+ *     * Neither the name of The Linux Fundation, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -31,9 +31,11 @@
 #define __BOARD_H
 
 #define LINUX_MACHTYPE_UNKNOWN 0
+#define BOARD_SOC_VERSION2     0x20000
 
 struct board_data {
 	uint32_t platform;
+	uint32_t platform_version;
 	uint32_t platform_hw;
 	uint32_t platform_subtype;
 	uint32_t target;
@@ -52,5 +54,6 @@ uint32_t board_baseband();
 uint32_t board_hardware_id();
 uint32_t board_pmic_type();
 uint32_t board_pmic_ver();
+uint32_t board_soc_version();
 
 #endif

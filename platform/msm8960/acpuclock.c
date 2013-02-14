@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -235,26 +235,37 @@ void clock_config_mmc(uint32_t interface, uint32_t freq)
 	reg |= MMC_BOOT_MCI_CLK_ENA_FLOW;
 	reg |= MMC_BOOT_MCI_CLK_IN_FEEDBACK;
 	writel(reg, MMC_BOOT_MCI_CLK);
+
+	/* Wait for the MMC_BOOT_MCI_CLK write to go through. */
+	mmc_mclk_reg_wr_delay();
+
+	/* Wait 1 ms to provide the free running SD CLK to the card. */
+	mdelay(1);
 }
 
 /* Configure crypto engine clock */
 void ce_clock_init(void)
 {
-	if (board_platform_id() != APQ8064)
-	{
-		/* Enable HCLK for CE1 */
-		clk_get_set_enable("ce1_pclk", 0, 1);
+    uint32_t platform_id;
 
-		/* Enable core clk for CE1 */
-		clk_get_set_enable("ce1_clk", 0, 1);
-	}
-	else
+    platform_id = board_platform_id();
+
+	if ((platform_id == APQ8064) || (platform_id == APQ8064AA)
+		|| (platform_id == APQ8064AB))
 	{
 		/* Enable HCLK for CE3 */
 		clk_get_set_enable("ce3_pclk", 0, 1);
 
 		/* Enable core clk for CE3 */
 		clk_get_set_enable("ce3_clk", 0, 1);
+	}
+	else
+	{
+		/* Enable HCLK for CE1 */
+		clk_get_set_enable("ce1_pclk", 0, 1);
+
+		/* Enable core clk for CE3 */
+		clk_get_set_enable("ce1_clk", 0, 1);
 	}
 }
 /* Async Reset CE1 */

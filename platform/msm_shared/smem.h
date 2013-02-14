@@ -2,7 +2,7 @@
  * Copyright (c) 2009, Google Inc.
  * All rights reserved.
  *
- * Copyright (c) 2009-2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -247,6 +247,7 @@ enum {
 	APQ8030AB = 157,
 	APQ8030AA = 160,
 	MSM8125   = 167,
+	APQ8064AA = 172, /* aka V2 SLOW_PRIME */
 };
 
 enum platform {
@@ -262,8 +263,10 @@ enum platform {
 	HW_PLATFORM_DRAGON = 10,
 	HW_PLATFORM_HRD = 13,
 	HW_PLATFORM_DTV = 14,
-    HW_PLATFORM_RUMI   = 15,
-    HW_PLATFORM_VIRTIO = 16,
+	HW_PLATFORM_RUMI   = 15,
+	HW_PLATFORM_VIRTIO = 16,
+	HW_PLATFORM_BTS = 19,
+	HW_PLATFORM_DMA = 22,
 	HW_PLATFORM_32BITS = 0x7FFFFFFF,
 };
 
@@ -275,6 +278,7 @@ enum platform_subtype {
 	HW_PLATFORM_SUBTYPE_SVLTE2A = 3,
 	HW_PLATFORM_SUBTYPE_SGLTE = 6,
 	HW_PLATFORM_SUBTYPE_DSDA = 7,
+	HW_PLATFORM_SUBTYPE_DSDA2 = 8,
 	HW_PLATFORM_SUBTYPE_32BITS = 0x7FFFFFFF
 };
 

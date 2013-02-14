@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -81,6 +81,7 @@ void gpio_config_uart_dm(uint8_t id)
 		}
 	}
 	else if((board_platform_id() == APQ8064) ||
+			(board_platform_id() == APQ8064AA) ||
 			(board_platform_id() == APQ8064AB))
 	{
 		switch (id) {
@@ -92,6 +93,15 @@ void gpio_config_uart_dm(uint8_t id)
 			/* configure tx gpio */
 			gpio_tlmm_config(18, 1, GPIO_OUTPUT, GPIO_NO_PULL,
 							 GPIO_8MA, GPIO_DISABLE);
+			break;
+
+		case GSBI_ID_2:
+			/* configure rx gpio */
+			gpio_tlmm_config(22, 1, GPIO_INPUT, GPIO_NO_PULL,
+						        GPIO_8MA, GPIO_DISABLE);
+			/* configure tx gpio */
+			gpio_tlmm_config(23, 1, GPIO_OUTPUT, GPIO_NO_PULL,
+						        GPIO_8MA, GPIO_DISABLE);
 			break;
 
 

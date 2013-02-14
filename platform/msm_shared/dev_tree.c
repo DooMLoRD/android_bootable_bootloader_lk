@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -36,7 +36,6 @@
 #include <platform.h>
 #include <board.h>
 
-extern unsigned char *update_cmdline(const char * cmdline);
 extern int target_is_emmc_boot(void);
 extern uint32_t target_dev_tree_mem(void *fdt, uint32_t memory_node_offset);
 
@@ -47,22 +46,39 @@ struct dt_entry * dev_tree_get_entry_ptr(struct dt_table *table)
 {
 	uint32_t i;
 	struct dt_entry *dt_entry_ptr;
+	struct dt_entry *latest_dt_entry = NULL;
 
 	dt_entry_ptr = (struct dt_entry *)((char *)table + DEV_TREE_HEADER_SIZE);
 
 	for(i = 0; i < table->num_entries; i++)
 	{
-		/* TODO: Add support to pass soc rev correctly.
-		 * Currently, the code does not support different soc revisions.
+		/* DTBs are stored in the ascending order of soc revision.
+		 * For eg: Rev0..Rev1..Rev2 & so on.
+		 * we pickup the DTB with highest soc rev number which is less
+		 * than or equal to actual hardware
 		 */
 		if((dt_entry_ptr->platform_id == board_platform_id()) &&
 		   (dt_entry_ptr->variant_id == board_hardware_id()) &&
-		   (dt_entry_ptr->soc_rev == 0))
+		   (dt_entry_ptr->soc_rev == board_soc_version()))
 			{
 				return dt_entry_ptr;
 			}
+		/* if the exact match not found, return the closest match
+		 * assuming it to be the nearest soc version
+		 */
+		if((dt_entry_ptr->platform_id == board_platform_id()) &&
+		  (dt_entry_ptr->variant_id == board_hardware_id()) &&
+		  (dt_entry_ptr->soc_rev <= board_soc_version())) {
+			latest_dt_entry = dt_entry_ptr;
+		}
 		dt_entry_ptr++;
 	}
+
+	if (latest_dt_entry) {
+		dprintf(SPEW, "Loading DTB with SOC version:%x\n", latest_dt_entry->soc_rev);
+		return latest_dt_entry;
+	}
+
 	return NULL;
 }
 
@@ -155,6 +171,8 @@ static int dev_tree_add_ptable_nodes(void *fdt, uint32_t parent_offset)
 	/* Get block size. */
 	blk_size = flash_block_size();
 
+	dprintf(INFO, "Add %d flash partitions to dt: start\n", ptable->count);
+
 	/* Need to add partitions in reverse order since libfdt adds
 	 * new nodes on the top.
 	 * Kernel looks to mount the partitions in the order specified in
@@ -229,6 +247,7 @@ static int dev_tree_add_ptable_nodes(void *fdt, uint32_t parent_offset)
 	}
 
 dev_tree_add_ptable_nodes_err:
+	dprintf(INFO, "Add %d flash partitions to dt: done\n", ptable->count);
 	free(ptn_name_array);
 	return dt_ret;
 }
@@ -352,7 +371,6 @@ int update_device_tree(void *fdt, const char *cmdline,
 {
 	int ret = 0;
 	uint32_t offset;
-	unsigned char *final_cmdline;
 
 	/* Check the device tree header */
 	ret = fdt_check_header(fdt);
@@ -394,8 +412,7 @@ int update_device_tree(void *fdt, const char *cmdline,
 
 	offset = ret;
 	/* Adding the cmdline to the chosen node */
-	final_cmdline = update_cmdline((const char*)cmdline);
-	ret = fdt_setprop_string(fdt, offset, (const char*)"bootargs", (const void*)final_cmdline);
+	ret = fdt_setprop_string(fdt, offset, (const char*)"bootargs", (const void*)cmdline);
 	if (ret)
 	{
 		dprintf(CRITICAL, "ERROR: Cannot update chosen node [bootargs]\n");

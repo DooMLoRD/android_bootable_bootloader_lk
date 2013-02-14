@@ -2,7 +2,7 @@
  * Copyright (c) 2009, Google Inc.
  * All rights reserved.
  *
- * Copyright (c) 2009-2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -102,7 +102,8 @@ static const char *baseband_csfb    = " androidboot.baseband=csfb";
 static const char *baseband_svlte2a = " androidboot.baseband=svlte2a";
 static const char *baseband_mdm     = " androidboot.baseband=mdm";
 static const char *baseband_sglte   = " androidboot.baseband=sglte";
-static const char *baseband_dsda   = " androidboot.baseband=dsda";
+static const char *baseband_dsda    = " androidboot.baseband=dsda";
+static const char *baseband_dsda2   = " androidboot.baseband=dsda2";
 
 /* Assuming unauthorized kernel image by default */
 static int auth_kernel_img = 0;
@@ -206,6 +207,10 @@ unsigned char *update_cmdline(const char * cmdline)
 		case BASEBAND_DSDA:
 			cmdline_len += strlen(baseband_dsda);
 			break;
+
+		case BASEBAND_DSDA2:
+			cmdline_len += strlen(baseband_dsda2);
+			break;
 	}
 
 	if (cmdline_len > 0) {
@@ -299,8 +304,17 @@ unsigned char *update_cmdline(const char * cmdline)
 				if (have_cmdline) --dst;
 				while ((*dst++ = *src++));
 				break;
+
+			case BASEBAND_DSDA2:
+				src = baseband_dsda2;
+				if (have_cmdline) --dst;
+				while ((*dst++ = *src++));
+				break;
 		}
 	}
+
+	dprintf(INFO, "cmdline: %s\n", cmdline_final);
+
 	return cmdline_final;
 }
 
@@ -347,21 +361,15 @@ unsigned *atag_cmdline(unsigned *ptr, const char *cmdline)
 {
 	int cmdline_length = 0;
 	int n;
-	unsigned char *cmdline_final = NULL;
 	char *dest;
 
-	cmdline_final = update_cmdline(cmdline);
-	if (cmdline_final){
-		dprintf(INFO, "cmdline: %s\n", cmdline_final);
-	}
-
-	cmdline_length =strlen((const char*)cmdline_final);
+	cmdline_length = strlen((const char*)cmdline);
 	n = (cmdline_length + 4) & (~3);
 
 	*ptr++ = (n / 4) + 2;
 	*ptr++ = 0x54410009;
 	dest = (char *) ptr;
-	while ((*dest++ = *cmdline_final++));
+	while ((*dest++ = *cmdline++));
 	ptr += (n / 4);
 
 	return ptr;
@@ -398,6 +406,7 @@ void boot_linux(void *kernel, unsigned *tags,
 		const char *cmdline, unsigned machtype,
 		void *ramdisk, unsigned ramdisk_size)
 {
+	unsigned char *final_cmdline;
 #if DEVICE_TREE
 	int ret = 0;
 #endif
@@ -407,11 +416,13 @@ void boot_linux(void *kernel, unsigned *tags,
 
 	ramdisk = PA(ramdisk);
 
+	final_cmdline = update_cmdline((const char*)cmdline);
+
 #if DEVICE_TREE
 	dprintf(INFO, "Updating device tree: start\n");
 
 	/* Update the Device Tree */
-	ret = update_device_tree((void *)tags, cmdline, ramdisk, ramdisk_size);
+	ret = update_device_tree((void *)tags, final_cmdline, ramdisk, ramdisk_size);
 	if(ret)
 	{
 		dprintf(CRITICAL, "ERROR: Updating Device Tree Failed \n");
@@ -421,7 +432,7 @@ void boot_linux(void *kernel, unsigned *tags,
 	dprintf(INFO, "Updating device tree: done\n");
 #else
 	/* Generating the Atags */
-	generate_atags(tags, cmdline, ramdisk, ramdisk_size);
+	generate_atags(tags, final_cmdline, ramdisk, ramdisk_size);
 #endif
 
 	dprintf(INFO, "booting linux @ %p, ramdisk @ %p (%d)\n",
@@ -562,6 +573,7 @@ int boot_linux_from_mmc(void)
 	struct dt_table *table;
 	struct dt_entry *dt_entry_ptr;
 	unsigned dt_table_offset;
+	uint32_t dt_actual;
 #endif
 
 	uhdr = (struct boot_img_hdr *)EMMC_BOOT_IMG_HEADER_ADDR;
@@ -616,8 +628,12 @@ int boot_linux_from_mmc(void)
 		image_addr = (unsigned char *)target_get_scratch_address();
 		kernel_actual = ROUND_TO_PAGE(hdr->kernel_size, page_mask);
 		ramdisk_actual = ROUND_TO_PAGE(hdr->ramdisk_size, page_mask);
+#if DEVICE_TREE
+		dt_actual = ROUND_TO_PAGE(hdr->dt_size, page_mask);
+		imagesize_actual = (page_size + kernel_actual + ramdisk_actual + dt_actual);
+#else
 		imagesize_actual = (page_size + kernel_actual + ramdisk_actual);
-
+#endif
 		offset = 0;
 
 		/* Assuming device rooted at this time */
@@ -661,6 +677,9 @@ int boot_linux_from_mmc(void)
 		/* Move kernel, ramdisk and device tree to correct address */
 		memmove((void*) hdr->kernel_addr, (char *)(image_addr + page_size), hdr->kernel_size);
 		memmove((void*) hdr->ramdisk_addr, (char *)(image_addr + page_size + kernel_actual), hdr->ramdisk_size);
+#if DEVICE_TREE
+		memmove((void*) hdr->tags_addr, (char *)(image_addr + page_size + kernel_actual + ramdisk_actual), hdr->dt_size);
+#endif
 
 		#if DEVICE_TREE
 		if(hdr->dt_size) {
@@ -779,7 +798,6 @@ unified_boot:
 	} else {
 		cmdline = DEFAULT_CMDLINE;
 	}
-	dprintf(INFO, "cmdline = '%s'\n", cmdline);
 
 	boot_linux((void *)hdr->kernel_addr, (unsigned *) hdr->tags_addr,
 		   (const char *)cmdline, board_machtype(),
@@ -805,8 +823,8 @@ int boot_linux_from_flash(void)
 #if DEVICE_TREE
 	struct dt_table *table;
 	struct dt_entry *dt_entry_ptr;
+	uint32_t dt_actual;
 #endif
-
 
 	if (target_is_emmc_boot()) {
 		hdr = (struct boot_img_hdr *)EMMC_BOOT_IMG_HEADER_ADDR;
@@ -867,8 +885,12 @@ int boot_linux_from_flash(void)
 		image_addr = (unsigned char *)target_get_scratch_address();
 		kernel_actual = ROUND_TO_PAGE(hdr->kernel_size, page_mask);
 		ramdisk_actual = ROUND_TO_PAGE(hdr->ramdisk_size, page_mask);
+#if DEVICE_TREE
+		dt_actual = ROUND_TO_PAGE(hdr->dt_size, page_mask);
+		imagesize_actual = (page_size + kernel_actual + ramdisk_actual + dt_actual);
+#else
 		imagesize_actual = (page_size + kernel_actual + ramdisk_actual);
-
+#endif
 		offset = 0;
 
 		/* Assuming device rooted at this time */
@@ -913,6 +935,9 @@ int boot_linux_from_flash(void)
 		/* Move kernel and ramdisk to correct address */
 		memmove((void*) hdr->kernel_addr, (char *)(image_addr + page_size), hdr->kernel_size);
 		memmove((void*) hdr->ramdisk_addr, (char *)(image_addr + page_size + kernel_actual), hdr->ramdisk_size);
+#if DEVICE_TREE
+		memmove((void*) hdr->tags_addr, (char *)(image_addr + page_size + kernel_actual + ramdisk_actual), hdr->dt_size);
+#endif
 
 		/* Make sure everything from scratch address is read before next step!*/
 		if(device.is_tampered)
