@@ -105,6 +105,11 @@ uint32_t board_platform_id(void)
 	return board.platform;
 }
 
+uint32_t board_platform_subid(void)
+{
+  	return board.platform_subtype;
+}
+
 uint32_t board_target_id()
 {
 	return board.target;
